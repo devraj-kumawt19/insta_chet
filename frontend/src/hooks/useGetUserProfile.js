@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { apiGet } from "../utils/api";
 
 const useGetUserProfile = (userId) => {
 	const [loading, setLoading] = useState(false);
@@ -8,14 +9,12 @@ const useGetUserProfile = (userId) => {
 		const getUser = async () => {
 			setLoading(true);
 			try {
-				const res = await fetch(`/api/users/profile/${userId}`);
-				const data = await res.json();
-
-				if (data.error) return;
-
-				setUser(data);
+				const data = await apiGet(`/api/users/profile/${userId}`);
+				if (data) {
+					setUser(data);
+				}
 			} catch (error) {
-				console.log(error.message);
+				console.error(error.message);
 			} finally {
 				setLoading(false);
 			}

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { apiPost } from "../utils/api";
 
 const useFollowUser = () => {
 	const [loading, setLoading] = useState(false);
@@ -6,21 +7,10 @@ const useFollowUser = () => {
 	const followUser = async (userId) => {
 		setLoading(true);
 		try {
-			const res = await fetch(`/api/users/follow/${userId}`, {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-				},
-			});
-
-			const data = await res.json();
-			if (data.error) {
-				console.log(data.error);
-				return false;
-			}
+			await apiPost(`/api/users/follow/${userId}`, {});
 			return true;
 		} catch (error) {
-			console.log(error.message);
+			console.error(error.message);
 			return false;
 		} finally {
 			setLoading(false);
@@ -30,21 +20,10 @@ const useFollowUser = () => {
 	const unfollowUser = async (userId) => {
 		setLoading(true);
 		try {
-			const res = await fetch(`/api/users/unfollow/${userId}`, {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-				},
-			});
-
-			const data = await res.json();
-			if (data.error) {
-				console.log(data.error);
-				return false;
-			}
+			await apiPost(`/api/users/unfollow/${userId}`, {});
 			return true;
 		} catch (error) {
-			console.log(error.message);
+			console.error(error.message);
 			return false;
 		} finally {
 			setLoading(false);

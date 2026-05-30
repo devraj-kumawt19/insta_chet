@@ -5,11 +5,33 @@ import express from "express";
 const app = express();
 
 const server = http.createServer(app);
+
+// Determine allowed origins based on environment
+const getAllowedOrigins = () => {
+	const allowedOrigins = [
+		"http://localhost:5173", // Vite dev server
+		"http://localhost:8080", // Backend dev
+		"http://localhost:3000", // Alternative frontend port
+		"https://insta-chet.onrender.com", // Production URL
+	];
+
+	// Add any additional origins from environment variable
+	if (process.env.ALLOWED_ORIGINS) {
+		const envOrigins = process.env.ALLOWED_ORIGINS.split(",");
+		allowedOrigins.push(...envOrigins);
+	}
+
+	return allowedOrigins;
+};
+
 const io = new Server(server, {
 	cors: {
-		origin: ["http://localhost:8080", "http://localhost:5173"],
+		origin: getAllowedOrigins(),
 		methods: ["GET", "POST"],
+		credentials: true,
+		allowedHeaders: ["Content-Type"],
 	},
+	transports: ["websocket", "polling"], // Support both websocket and polling
 });
 
 export const getReceiverSocketId = (receiverId) => {

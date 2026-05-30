@@ -15,10 +15,17 @@ export const SocketContextProvider = ({ children }) => {
 
 	useEffect(() => {
 		if (authUser) {
-			const socket = io("http://localhost:8080", {
+			// Use environment variable for Socket.IO connection URL
+			const socketUrl = import.meta.env.VITE_API_URL || "http://localhost:8080";
+			
+			const socket = io(socketUrl, {
 				query: {
 					userId: authUser._id,
 				},
+				reconnection: true,
+				reconnectionDelay: 1000,
+				reconnectionDelayMax: 5000,
+				reconnectionAttempts: 5,
 			});
 
 			setSocket(socket);
@@ -26,6 +33,19 @@ export const SocketContextProvider = ({ children }) => {
 			// socket.on() is used to listen to the events. can be used both on client and server side
 			socket.on("getOnlineUsers", (users) => {
 				setOnlineUsers(users);
+			});
+
+			// Log connection status for debugging
+			socket.on("connect", () => {
+				console.log("Socket connected:", socket.id);
+			});
+
+			socket.on("disconnect", () => {
+				console.log("Socket disconnected");
+			});
+
+			socket.on("connect_error", (error) => {
+				console.error("Socket connection error:", error);
 			});
 
 			return () => socket.close();

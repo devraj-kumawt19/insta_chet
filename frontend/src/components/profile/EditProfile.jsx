@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useAuthContext } from "../../context/AuthContext";
+import { apiPost, apiPut } from "../../utils/api";
 
 const EditProfile = ({ onClose, onProfileUpdate }) => {
 	const { authUser, setAuthUser } = useAuthContext();
@@ -30,22 +31,12 @@ const EditProfile = ({ onClose, onProfileUpdate }) => {
 			const formData = new FormData();
 			formData.append("profilePic", imageFile);
 
-			const res = await fetch("/api/users/upload-profile-pic", {
-				method: "POST",
-				body: formData,
-			});
-
-			const data = await res.json();
-
-			if (data.error) {
-				console.log(data.error);
-				return;
-			}
+			const data = await apiPost("/api/users/upload-profile-pic", formData);
 
 			setAuthUser(data.user);
 			setImageFile(null);
 		} catch (error) {
-			console.log(error.message);
+			console.error(error.message);
 		} finally {
 			setLoading(false);
 		}
@@ -55,28 +46,15 @@ const EditProfile = ({ onClose, onProfileUpdate }) => {
 		e.preventDefault();
 		try {
 			setLoading(true);
-			const res = await fetch("/api/users/profile/update", {
-				method: "PUT",
-				headers: {
-					"Content-Type": "application/json",
-				},
-				body: JSON.stringify({
-					fullName,
-					bio,
-				}),
+			const data = await apiPut("/api/users/profile/update", {
+				fullName,
+				bio,
 			});
-
-			const data = await res.json();
-
-			if (data.error) {
-				console.log(data.error);
-				return;
-			}
 
 			setAuthUser(data);
 			onProfileUpdate?.();
 		} catch (error) {
-			console.log(error.message);
+			console.error(error.message);
 		} finally {
 			setLoading(false);
 		}

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import toast from "react-hot-toast";
 import { useAuthContext } from "../context/AuthContext";
+import { apiPost } from "../utils/api";
 
 const useLogin = () => {
 	const [loading, setLoading] = useState(false);
@@ -11,16 +12,7 @@ const useLogin = () => {
 		if (!success) return;
 		setLoading(true);
 		try {
-			const res = await fetch("/api/auth/login", {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ username, password }),
-			});
-
-			const data = await res.json();
-			if (data.error) {
-				throw new Error(data.error);
-			}
+			const data = await apiPost("/api/auth/login", { username, password });
 
 			localStorage.setItem("chat-user", JSON.stringify(data));
 			setAuthUser(data);
