@@ -1,0 +1,22 @@
+import express from "express";
+import protectRoute from "../middleware/protectRoute.js";
+import { 
+	getUsersForSidebar, 
+	getUserProfile, 
+	updateProfile, 
+	followUser, 
+	unfollowUser,
+	uploadProfilePic
+} from "../controllers/user.controller.js";
+import { upload } from "../middleware/upload.js";
+
+const router = express.Router();
+
+router.get("/", protectRoute, getUsersForSidebar);
+router.get("/profile/:userId", protectRoute, getUserProfile);
+router.put("/profile/update", protectRoute, updateProfile);
+router.post("/follow/:userId", protectRoute, followUser);
+router.post("/unfollow/:userId", protectRoute, unfollowUser);
+router.post("/upload-profile-pic", protectRoute, upload.single("profilePic"), uploadProfilePic);
+
+export default router;
