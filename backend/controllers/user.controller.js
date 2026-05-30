@@ -35,11 +35,11 @@ export const getUserProfile = async (req, res) => {
 export const updateProfile = async (req, res) => {
 	try {
 		const userId = req.user._id;
-		const { fullName, bio, profilePic } = req.body;
+		const { fullName, bio, profilePic, profileVideo } = req.body;
 
 		const user = await User.findByIdAndUpdate(
 			userId,
-			{ fullName, bio, profilePic },
+			{ fullName, bio, profilePic, profileVideo },
 			{ new: true }
 		).select("-password");
 
@@ -132,6 +132,33 @@ export const uploadProfilePic = async (req, res) => {
 		});
 	} catch (error) {
 		console.error("Error in uploadProfilePic: ", error.message);
+		res.status(500).json({ error: "Internal server error" });
+	}
+};
+
+export const uploadProfileVideo = async (req, res) => {
+	try {
+		const userId = req.user._id;
+
+		if (!req.file) {
+			return res.status(400).json({ error: "No video uploaded" });
+		}
+
+		const profileVideoUrl = `/uploads/${req.file.filename}`;
+
+		const user = await User.findByIdAndUpdate(
+			userId,
+			{ profileVideo: profileVideoUrl },
+			{ new: true }
+		).select("-password");
+
+		res.status(200).json({
+			message: "Profile video uploaded successfully",
+			profileVideo: profileVideoUrl,
+			user: user,
+		});
+	} catch (error) {
+		console.error("Error in uploadProfileVideo: ", error.message);
 		res.status(500).json({ error: "Internal server error" });
 	}
 };

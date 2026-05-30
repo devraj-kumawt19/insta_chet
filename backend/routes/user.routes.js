@@ -6,7 +6,8 @@ import {
 	updateProfile, 
 	followUser, 
 	unfollowUser,
-	uploadProfilePic
+	uploadProfilePic,
+	uploadProfileVideo
 } from "../controllers/user.controller.js";
 import { upload } from "../middleware/upload.js";
 
@@ -18,5 +19,6 @@ router.put("/profile/update", protectRoute, updateProfile);
 router.post("/follow/:userId", protectRoute, followUser);
 router.post("/unfollow/:userId", protectRoute, unfollowUser);
 router.post("/upload-profile-pic", protectRoute, upload.single("profilePic"), uploadProfilePic);
+router.post("/upload-profile-video", protectRoute, upload.single("profileVideo"), uploadProfileVideo);
 
 export default router;

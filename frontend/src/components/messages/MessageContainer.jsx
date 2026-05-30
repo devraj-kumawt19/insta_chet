@@ -2,55 +2,91 @@ import { useState, useEffect } from "react";
 import useConversation from "../../zustand/useConversation";
 import MessageInput from "./MessageInput";
 import Messages from "./Messages";
-import { TiMessages } from "react-icons/ti";
 import { useAuthContext } from "../../context/AuthContext";
 import VideoCall from "../video/VideoCall";
+import { Avatar, Button } from "../ui/UIComponents";
+import { getAvatarUrl } from "../../utils/avatarUtils";
+import { MdCall, MdMoreVert, MdKeyboardArrowLeft } from "react-icons/md";
 
 const MessageContainer = () => {
 	const { selectedConversation, setSelectedConversation } = useConversation();
 	const [showVideoCall, setShowVideoCall] = useState(false);
 
 	useEffect(() => {
-		// cleanup function (unmounts)
 		return () => setSelectedConversation(null);
 	}, [setSelectedConversation]);
 
-	const handleVideoCallClick = () => {
-		setShowVideoCall(true);
-	};
-
-	const handleEndCall = () => {
-		setShowVideoCall(false);
-	};
-
 	return (
-		<div className='flex flex-col flex-1 sm:flex-1 md:min-w-[450px]'>
+		<div className="flex flex-col h-full">
 			{!selectedConversation ? (
 				<NoChatSelected />
 			) : (
 				<>
-					{/* Header */}
-				<div className='bg-slate-500 px-2 sm:px-4 py-2 mb-2 flex justify-between items-center flex-wrap gap-2'>
-						<div>
-						<span className='label-text text-xs sm:text-sm'>To:</span>{" "}
-						<span className='text-gray-900 font-bold text-xs sm:text-sm truncate'>{selectedConversation.fullName}</span>
-					</div>
-					<div className='flex gap-1 sm:gap-2'>
-						<button
-							onClick={handleVideoCallClick}
-							className='bg-green-600 hover:bg-green-700 text-white py-1 px-2 sm:px-3 rounded-lg text-xs sm:text-sm'
+					{/* Chat Header */}
+					<div className="flex items-center justify-between p-4 bg-white dark:bg-dark-surface border-b border-neutral-200 dark:border-neutral-800 shadow-sm">
+						<div className="flex items-center gap-3">
+							{/* Back Button (Mobile) */}
+							<button
+								onClick={() => setSelectedConversation(null)}
+								className="md:hidden p-2 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-lg transition-colors"
 							>
-								📹 Call
+								<MdKeyboardArrowLeft className="text-2xl text-neutral-900 dark:text-neutral-50" />
+							</button>
+
+							{/* Avatar & Name */}
+							<div className="flex items-center gap-3">
+								<div className="relative">
+									<img
+										src={selectedConversation.profilePic}
+										alt={selectedConversation.fullName}
+										className="w-12 h-12 rounded-full object-cover ring-2 ring-primary-300 dark:ring-primary-700"
+									/>
+									<div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white dark:border-dark-surface" />
+								</div>
+								<div className="min-w-0">
+									<h2 className="font-bold text-neutral-900 dark:text-neutral-50 text-sm truncate">
+										{selectedConversation.fullName}
+									</h2>
+									<p className="text-xs text-neutral-600 dark:text-neutral-400">
+										Active now
+									</p>
+								</div>
+							</div>
+						</div>
+
+						{/* Actions */}
+						<div className="flex items-center gap-2">
+							<Button
+								onClick={() => setShowVideoCall(true)}
+								variant="ghost"
+								size="sm"
+								className="flex items-center gap-2"
+							>
+								<MdCall className="text-lg" />
+								<span className="hidden sm:inline">Call</span>
+							</Button>
+							<button className="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-lg transition-colors">
+								<MdMoreVert className="text-lg text-neutral-900 dark:text-neutral-50" />
 							</button>
 						</div>
 					</div>
-					<Messages />
-					<MessageInput onVideoCallClick={handleVideoCallClick} />
+
+					{/* Messages Area */}
+					<div className="flex-1 overflow-hidden">
+						<Messages />
+					</div>
+
+					{/* Message Input */}
+					<div className="bg-white dark:bg-dark-surface border-t border-neutral-200 dark:border-neutral-800 p-4">
+						<MessageInput />
+					</div>
+
+					{/* Video Call Modal */}
 					{showVideoCall && (
 						<VideoCall
 							recipientId={selectedConversation._id}
 							recipientName={selectedConversation.fullName}
-							onEndCall={handleEndCall}
+							onEndCall={() => setShowVideoCall(false)}
 						/>
 					)}
 				</>
@@ -58,16 +94,26 @@ const MessageContainer = () => {
 		</div>
 	);
 };
+
 export default MessageContainer;
 
 const NoChatSelected = () => {
 	const { authUser } = useAuthContext();
 	return (
-		<div className='flex items-center justify-center w-full h-full'>
-			<div className='px-4 text-center sm:text-lg md:text-xl text-gray-200 font-semibold flex flex-col items-center gap-2'>
-				<p>Welcome 👋 {authUser.fullName} ❄</p>
-				<p>Select a chat to start messaging</p>
-				<TiMessages className='text-3xl md:text-6xl text-center' />
+		<div className="flex flex-col items-center justify-center w-full h-full bg-gradient-to-br from-neutral-50 to-neutral-100 dark:from-dark-surface dark:to-dark-bg">
+			<div className="text-center space-y-4">
+				<div className="inline-flex items-center justify-center w-24 h-24 rounded-2xl bg-gradient-to-br from-accent-200 to-primary-200 dark:from-accent-900/30 dark:to-primary-900/30 mb-2">
+					<span className="text-5xl">💬</span>
+				</div>
+				<div>
+					<h2 className="text-2xl font-bold text-neutral-900 dark:text-neutral-50 mb-2">
+						Welcome, {authUser?.fullName}!
+					</h2>
+					<p className="text-neutral-600 dark:text-neutral-400 text-sm max-w-xs">
+						Select a conversation from the sidebar to start messaging
+					</p>
+				</div>
+				<div className="text-6xl animate-bounce-slow">👋</div>
 			</div>
 		</div>
 	);

@@ -20,7 +20,7 @@ const UserProfile = ({ userId, onClose }) => {
 	}
 
 	if (!user) {
-		return <div className="text-center text-gray-500">User not found</div>;
+		return <div className="text-center text-gray-500 text-sm">User not found</div>;
 	}
 
 	const handleFollow = async () => {

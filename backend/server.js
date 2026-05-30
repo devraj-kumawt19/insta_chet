@@ -23,7 +23,7 @@ const PORT = process.env.PORT || 8080;
 const corsOptions = {
 	origin: process.env.ALLOWED_ORIGINS 
 		? process.env.ALLOWED_ORIGINS.split(",")
-		: ["http://localhost:5173", "http://localhost:8080", "http://localhost:3000", "https://insta-chet.onrender.com"],
+		: ["http://localhost:5173", "http://localhost:5174", "http://localhost:8080", "http://localhost:3000", "https://insta-chet.onrender.com"],
 	credentials: true,
 	methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
 	allowedHeaders: ["Content-Type", "Authorization"],

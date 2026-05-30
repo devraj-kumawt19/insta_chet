@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { IoSearchSharp } from "react-icons/io5";
 import useConversation from "../../zustand/useConversation";
 import useGetConversations from "../../hooks/useGetConversations";
 import toast from "react-hot-toast";
+import { MdSearch, MdClose } from "react-icons/md";
 
 const SearchInput = () => {
 	const [search, setSearch] = useState("");
@@ -16,28 +16,41 @@ const SearchInput = () => {
 			return toast.error("Search term must be at least 3 characters long");
 		}
 
-		const conversation = conversations.find((c) => c.fullName.toLowerCase().includes(search.toLowerCase()));
+		const conversation = conversations.find((c) =>
+			c.fullName.toLowerCase().includes(search.toLowerCase())
+		);
 
 		if (conversation) {
 			setSelectedConversation(conversation);
 			setSearch("");
 		} else toast.error("No such user found!");
 	};
+
 	return (
-		<form onSubmit={handleSubmit} className='flex items-center gap-1 sm:gap-2'>
-			<input
-				type='text'
-				placeholder='Search…'
-				className='input input-bordered rounded-full text-xs sm:text-sm px-2 sm:px-4 py-1 sm:py-2 flex-1'
-				value={search}
-				onChange={(e) => setSearch(e.target.value)}
-			/>
-			<button type='submit' className='btn btn-circle bg-sky-500 text-white btn-sm sm:btn-md btn-sm sm:btn-md'>
-				<IoSearchSharp className='w-4 sm:w-6 h-4 sm:h-6 outline-none' />
-			</button>
+		<form onSubmit={handleSubmit} className="relative">
+			<div className="relative">
+				<MdSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-400 text-lg" />
+				<input
+					type="text"
+					placeholder="Search conversations..."
+					className="input-modern pl-10 pr-10 w-full text-sm"
+					value={search}
+					onChange={(e) => setSearch(e.target.value)}
+				/>
+				{search && (
+					<button
+						type="button"
+						onClick={() => setSearch("")}
+						className="absolute right-3 top-1/2 transform -translate-y-1/2 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors"
+					>
+						<MdClose className="text-lg" />
+					</button>
+				)}
+			</div>
 		</form>
 	);
 };
+
 export default SearchInput;
 
 // STARTER CODE SNIPPET

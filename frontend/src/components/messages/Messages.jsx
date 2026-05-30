@@ -16,22 +16,40 @@ const Messages = () => {
 	}, [messages]);
 
 	return (
-		<div className='px-2 sm:px-4 flex-1 overflow-auto'>
-			{!loading &&
-				messages.length > 0 &&
-				messages.map((message) => (
-					<div key={message._id} ref={lastMessageRef}>
+		<div className="px-3 sm:px-6 py-4 flex-1 overflow-y-auto flex flex-col gap-4 bg-gradient-to-br from-white to-neutral-50 dark:from-dark-surface dark:to-dark-bg">
+			{!loading && messages.length > 0 ? (
+				messages.map((message, idx) => (
+					<div key={message._id} ref={idx === messages.length - 1 ? lastMessageRef : null}>
 						<Message message={message} />
 					</div>
-				))}
+				))
+			) : null}
 
-			{loading && [...Array(3)].map((_, idx) => <MessageSkeleton key={idx} />)}
+			{loading && (
+				<>
+					<MessageSkeleton />
+					<MessageSkeleton />
+					<MessageSkeleton />
+				</>
+			)}
+
 			{!loading && messages.length === 0 && (
-				<p className='text-center text-xs sm:text-sm'>Send a message to start the conversation</p>
+				<div className="flex items-center justify-center h-full">
+					<div className="text-center space-y-2">
+						<div className="text-4xl">👋</div>
+						<p className="text-sm text-neutral-600 dark:text-neutral-400">
+							No messages yet
+						</p>
+						<p className="text-xs text-neutral-500 dark:text-neutral-500">
+							Start a conversation by sending a message
+						</p>
+					</div>
+				</div>
 			)}
 		</div>
 	);
 };
+
 export default Messages;
 
 // STARTER CODE SNIPPET
