@@ -50,9 +50,9 @@ const SignUp = () => {
 						<span className="text-3xl font-bold text-white">✨</span>
 					</div>
 					<h1 className="text-4xl font-bold bg-gradient-to-r from-accent-600 to-primary-600 bg-clip-text text-transparent mb-2">
-						ChatApp
+						ChetGram
 					</h1>
-					<p className="text-neutral-600 dark:text-neutral-400">Join the community</p>
+					<p className="text-neutral-600 dark:text-neutral-400">Chat, Posts & Stories</p>
 				</div>
 
 				{/* Sign Up Card */}

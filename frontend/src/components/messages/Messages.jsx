@@ -8,18 +8,19 @@ const Messages = () => {
 	const { messages, loading } = useGetMessages();
 	useListenMessages();
 	const lastMessageRef = useRef();
+	const containerRef = useRef();
 
 	useEffect(() => {
-		setTimeout(() => {
-			lastMessageRef.current?.scrollIntoView({ behavior: "smooth" });
-		}, 100);
+		if (containerRef.current) {
+			containerRef.current.scrollTop = containerRef.current.scrollHeight;
+		}
 	}, [messages]);
 
 	return (
-		<div className="px-3 sm:px-6 py-4 flex-1 overflow-y-auto flex flex-col gap-4 bg-gradient-to-br from-white to-neutral-50 dark:from-dark-surface dark:to-dark-bg">
+		<div ref={containerRef} className="px-3 sm:px-6 py-4 flex-1 overflow-y-auto flex flex-col gap-4 bg-gradient-to-br from-white to-neutral-50 dark:from-dark-surface dark:to-dark-bg">
 			{!loading && messages.length > 0 ? (
-				messages.map((message, idx) => (
-					<div key={message._id} ref={idx === messages.length - 1 ? lastMessageRef : null}>
+				messages.map((message) => (
+					<div key={message._id} ref={lastMessageRef}>
 						<Message message={message} />
 					</div>
 				))

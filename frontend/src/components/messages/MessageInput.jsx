@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { BsSend } from "react-icons/bs";
 import useSendMessage from "../../hooks/useSendMessage";
 import useConversation from "../../zustand/useConversation";
@@ -41,51 +42,74 @@ const MessageInput = () => {
 	};
 
 	return (
-		<form onSubmit={handleSubmit} className="w-full">
-			<div className="flex items-end gap-3">
+		<form onSubmit={handleSubmit} className="w-full bg-gradient-to-t from-white/80 to-transparent dark:from-neutral-900/80 dark:to-transparent backdrop-blur-sm">
+			<div className="px-3 sm:px-4 py-3 sm:py-4 flex items-end gap-2 sm:gap-3">
 				{/* Emoji & Attach Buttons */}
-<div className="flex gap-2 relative">
-				<div ref={emojiRef} className="relative">
-					<button
+				<div className="flex gap-1 sm:gap-2 relative">
+					<div ref={emojiRef} className="relative">
+						<motion.button
+							whileHover={{ scale: 1.1 }}
+							whileTap={{ scale: 0.95 }}
+							type="button"
+							onClick={() => setShowEmojis(!showEmojis)}
+							className={`p-2 sm:p-2.5 rounded-full transition-all duration-200 ${
+								showEmojis
+									? "bg-pink-500 dark:bg-pink-600 text-white shadow-lg"
+									: "bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-50 hover:bg-neutral-200 dark:hover:bg-neutral-700"
+							}`}
+							title="Add emoji"
+						>
+							<MdEmojiEmotions className="text-lg sm:text-xl" />
+						</motion.button>
+						
+						{/* Emoji Picker */}
+						<AnimatePresence>
+							{showEmojis && (
+								<motion.div 
+									initial={{ opacity: 0, scale: 0.95, y: 10 }}
+									animate={{ opacity: 1, scale: 1, y: 0 }}
+									exit={{ opacity: 0, scale: 0.95, y: 10 }}
+									transition={{ duration: 0.15 }}
+									className="absolute bottom-full left-0 mb-3 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-2xl shadow-xl p-3 grid grid-cols-6 gap-2 w-max z-50 backdrop-blur-sm"
+								>
+									{emojis.map((emoji) => (
+										<motion.button
+											key={emoji}
+											whileHover={{ scale: 1.3, rotate: 10 }}
+											whileTap={{ scale: 0.9 }}
+											type="button"
+											onClick={() => handleEmojiClick(emoji)}
+											className="text-xl sm:text-2xl p-1 sm:p-2 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-lg transition-colors cursor-pointer"
+										>
+											{emoji}
+										</motion.button>
+									))}
+								</motion.div>
+							)}
+						</AnimatePresence>
+					</div>
+
+					<motion.button
+						whileHover={{ scale: 1.1 }}
+						whileTap={{ scale: 0.95 }}
 						type="button"
-						onClick={() => setShowEmojis(!showEmojis)}
-						className={`p-2.5 rounded-lg transition-all duration-200 ${showEmojis ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400' : 'bg-neutral-100 dark:bg-neutral-700/50 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-50'}`}
-						title="Add emoji"
-					>
-						<MdEmojiEmotions className="text-xl" />
-					</button>
-					
-					{/* Emoji Picker */}
-					{showEmojis && (
-						<div className="absolute bottom-full left-0 mb-2 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg shadow-lg p-2 grid grid-cols-6 gap-1 w-max">
-						{emojis.map((emoji) => (
-							<button
-								key={emoji}
-								type="button"
-								onClick={() => handleEmojiClick(emoji)}
-								className="text-xl p-2 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded transition-colors cursor-pointer"
-							>
-								{emoji}
-							</button>
-						))}
-						</div>
-					)}
-				</div>
-					<button
-						type="button"
-						className="p-2.5 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-50"
+						className="p-2 sm:p-2.5 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-all text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-50"
 						title="Attach file"
 					>
-						<MdAttachFile className="text-xl" />
-					</button>
+						<MdAttachFile className="text-lg sm:text-xl" />
+					</motion.button>
 				</div>
 
 				{/* Input Field */}
-				<div className="flex-1 relative">
-					<input
+				<motion.div 
+					initial={{ width: "100%" }}
+					className="flex-1 relative"
+				>
+					<motion.input
+						whileFocus={{ scale: 1.01 }}
 						type="text"
-						placeholder="Type a message..."
-						className="input-modern w-full"
+						placeholder="Message..."
+						className="w-full bg-gradient-to-r from-neutral-100 to-neutral-50 dark:from-neutral-800 dark:to-neutral-800/50 border border-neutral-200 dark:border-neutral-700 rounded-full px-4 sm:px-5 py-2.5 sm:py-3 text-sm sm:text-base placeholder-neutral-500 dark:placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-pink-400 dark:focus:ring-pink-500 focus:border-transparent dark:text-neutral-50 transition-all shadow-sm focus:shadow-lg"
 						value={message}
 						onChange={(e) => setMessage(e.target.value)}
 						onKeyDown={(e) => {
@@ -95,30 +119,27 @@ const MessageInput = () => {
 							}
 						}}
 					/>
-				</div>
+				</motion.div>
 
 				{/* Send Button */}
-				<button
+				<motion.button
+					whileHover={{ scale: 1.08 }}
+					whileTap={{ scale: 0.92 }}
 					type="submit"
 					disabled={loading || !message.trim()}
-					className={`p-2.5 rounded-lg transition-all duration-200 flex items-center justify-center ${
+					className={`p-2 sm:p-2.5 rounded-full transition-all duration-200 flex items-center justify-center shadow-lg hover:shadow-xl ${
 						loading || !message.trim()
 							? "bg-neutral-200 dark:bg-neutral-700 text-neutral-500 dark:text-neutral-600 cursor-not-allowed"
-							: "bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white hover:shadow-lg"
+							: "bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white shadow-pink-500/50 hover:shadow-pink-500/70"
 					}`}
-					title="Send message"
+					title="Send message (Enter)"
 				>
 					{loading ? (
 						<LoadingSpinner size="sm" />
 					) : (
-						<BsSend className="text-lg" />
+						<BsSend className="text-lg sm:text-xl" />
 					)}
-				</button>
-			</div>
-
-			{/* Character Hint */}
-			<div className="text-xs text-neutral-500 dark:text-neutral-500 mt-2">
-				Press Enter to send, Shift+Enter for new line
+				</motion.button>
 			</div>
 		</form>
 	);

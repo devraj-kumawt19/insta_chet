@@ -35,13 +35,35 @@ export const getUserProfile = async (req, res) => {
 export const updateProfile = async (req, res) => {
 	try {
 		const userId = req.user._id;
-		const { fullName, bio, profilePic, profileVideo } = req.body;
+		const { fullName, username, bio, profilePic, profileVideo } = req.body;
+
+		// Validate inputs
+		if (!fullName?.trim()) {
+			return res.status(400).json({ error: "Full name is required" });
+		}
+
+		// Check if username is being updated and if it's unique
+		if (username && username !== req.user.username) {
+			const existingUser = await User.findOne({ username, _id: { $ne: userId } });
+			if (existingUser) {
+				return res.status(400).json({ error: "Username already taken" });
+			}
+		}
+
+		const updateData = { fullName, bio };
+		if (username) updateData.username = username;
+		if (profilePic) updateData.profilePic = profilePic;
+		if (profileVideo) updateData.profileVideo = profileVideo;
 
 		const user = await User.findByIdAndUpdate(
 			userId,
-			{ fullName, bio, profilePic, profileVideo },
+			updateData,
 			{ new: true }
 		).select("-password");
+
+		if (!user) {
+			return res.status(404).json({ error: "User not found" });
+		}
 
 		res.status(200).json(user);
 	} catch (error) {
@@ -159,6 +181,30 @@ export const uploadProfileVideo = async (req, res) => {
 		});
 	} catch (error) {
 		console.error("Error in uploadProfileVideo: ", error.message);
+		res.status(500).json({ error: "Internal server error" });
+	}
+};
+
+export const searchUsers = async (req, res) => {
+	try {
+		const { q } = req.query;
+
+		if (!q || q.trim().length === 0) {
+			return res.status(400).json({ error: "Search query is required" });
+		}
+
+		const searchQuery = {
+			$or: [
+				{ fullName: { $regex: q, $options: "i" } },
+				{ username: { $regex: q, $options: "i" } },
+			],
+		};
+
+		const users = await User.find(searchQuery).select("-password").limit(20);
+
+		res.status(200).json(users);
+	} catch (error) {
+		console.error("Error in searchUsers: ", error.message);
 		res.status(500).json({ error: "Internal server error" });
 	}
 };

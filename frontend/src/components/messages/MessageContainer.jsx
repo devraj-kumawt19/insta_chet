@@ -1,14 +1,15 @@
 import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
 import useConversation from "../../zustand/useConversation";
 import MessageInput from "./MessageInput";
 import Messages from "./Messages";
 import { useAuthContext } from "../../context/AuthContext";
 import VideoCall from "../video/VideoCall";
-import { Avatar, Button } from "../ui/UIComponents";
+import { Avatar, Button, ProfileImage } from "../ui/UIComponents";
 import { getAvatarUrl } from "../../utils/avatarUtils";
 import { MdCall, MdMoreVert, MdKeyboardArrowLeft } from "react-icons/md";
 
-const MessageContainer = () => {
+const MessageContainer = ({ onBack }) => {
 	const { selectedConversation, setSelectedConversation } = useConversation();
 	const [showVideoCall, setShowVideoCall] = useState(false);
 
@@ -16,70 +17,106 @@ const MessageContainer = () => {
 		return () => setSelectedConversation(null);
 	}, [setSelectedConversation]);
 
+	const handleBack = () => {
+		if (onBack) {
+			onBack();
+		} else {
+			setSelectedConversation(null);
+		}
+	};
+
 	return (
-		<div className="flex flex-col h-full">
+		<div className="flex flex-col h-full w-full overflow-hidden">
 			{!selectedConversation ? (
 				<NoChatSelected />
 			) : (
 				<>
 					{/* Chat Header */}
-					<div className="flex items-center justify-between p-4 bg-white dark:bg-dark-surface border-b border-neutral-200 dark:border-neutral-800 shadow-sm">
-						<div className="flex items-center gap-3">
+					<motion.div 
+						initial={{ y: -20, opacity: 0 }}
+						animate={{ y: 0, opacity: 1 }}
+						className="flex items-center justify-between px-3 sm:px-4 md:px-6 py-3 sm:py-4 bg-white dark:bg-neutral-900/95 border-b border-neutral-100 dark:border-neutral-800 shadow-sm hover:shadow-md transition-shadow backdrop-blur-sm flex-shrink-0 z-10"
+					>
+						<div className="flex items-center gap-2 sm:gap-4 flex-1 min-w-0">
 							{/* Back Button (Mobile) */}
-							<button
-								onClick={() => setSelectedConversation(null)}
-								className="md:hidden p-2 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-lg transition-colors"
+							<motion.button
+								whileHover={{ scale: 1.1 }}
+								whileTap={{ scale: 0.95 }}
+								onClick={handleBack}
+								className="md:hidden p-1.5 sm:p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-full transition-colors"
 							>
 								<MdKeyboardArrowLeft className="text-2xl text-neutral-900 dark:text-neutral-50" />
-							</button>
+							</motion.button>
 
 							{/* Avatar & Name */}
-							<div className="flex items-center gap-3">
-								<div className="relative">
-									<img
+							<motion.div 
+								whileHover={{ scale: 1.02 }}
+								className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0 cursor-pointer group"
+							>
+								<div className="relative flex-shrink-0">
+									<ProfileImage
 										src={selectedConversation.profilePic}
 										alt={selectedConversation.fullName}
-										className="w-12 h-12 rounded-full object-cover ring-2 ring-primary-300 dark:ring-primary-700"
+										size="w-10 h-10 sm:w-12 sm:h-12"
+										initials={selectedConversation.fullName?.charAt(0).toUpperCase() || selectedConversation.username?.charAt(0).toUpperCase() || "?"}
+										className="ring-2 ring-pink-400 dark:ring-pink-500 shadow-md group-hover:ring-pink-500 transition-all"
 									/>
-									<div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white dark:border-dark-surface" />
+									<motion.div 
+										animate={{ scale: [1, 1.2, 1] }}
+										transition={{ repeat: Infinity, duration: 2 }}
+										className="absolute bottom-0 right-0 w-3 h-3 sm:w-3.5 sm:h-3.5 bg-green-500 rounded-full border-2 border-white dark:border-neutral-900 shadow-lg" 
+									/>
 								</div>
-								<div className="min-w-0">
-									<h2 className="font-bold text-neutral-900 dark:text-neutral-50 text-sm truncate">
+								<div className="min-w-0 flex-1">
+									<h2 className="font-bold text-neutral-900 dark:text-neutral-50 text-sm sm:text-base truncate group-hover:text-pink-600 dark:group-hover:text-pink-400 transition-colors">
 										{selectedConversation.fullName}
 									</h2>
-									<p className="text-xs text-neutral-600 dark:text-neutral-400">
-										Active now
+									<p className="text-xs sm:text-sm text-neutral-600 dark:text-neutral-400 font-semibold">
+										🟢 Active now
 									</p>
 								</div>
-							</div>
+							</motion.div>
 						</div>
 
 						{/* Actions */}
-						<div className="flex items-center gap-2">
-							<Button
+						<motion.div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+							<motion.button
+								whileHover={{ scale: 1.1 }}
+								whileTap={{ scale: 0.95 }}
 								onClick={() => setShowVideoCall(true)}
-								variant="ghost"
-								size="sm"
-								className="flex items-center gap-2"
+								className="p-1.5 sm:p-2.5 rounded-full hover:bg-gradient-to-r hover:from-pink-100 hover:to-purple-100 dark:hover:from-pink-900/30 dark:hover:to-purple-900/30 transition-all text-neutral-700 dark:text-neutral-300 hover:text-pink-600 dark:hover:text-pink-400"
+								title="Start video call"
 							>
-								<MdCall className="text-lg" />
-								<span className="hidden sm:inline">Call</span>
-							</Button>
-							<button className="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-lg transition-colors">
-								<MdMoreVert className="text-lg text-neutral-900 dark:text-neutral-50" />
-							</button>
-						</div>
-					</div>
+								<MdCall className="text-lg sm:text-xl" />
+							</motion.button>
+							<motion.button 
+								whileHover={{ scale: 1.1, rotate: 90 }}
+								whileTap={{ scale: 0.95 }}
+								className="p-1.5 sm:p-2.5 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-neutral-700 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-neutral-50"
+								title="More options"
+							>
+								<MdMoreVert className="text-lg sm:text-xl" />
+							</motion.button>
+						</motion.div>
+					</motion.div>
 
 					{/* Messages Area */}
-					<div className="flex-1 overflow-hidden">
+					<motion.div 
+						initial={{ opacity: 0 }}
+						animate={{ opacity: 1 }}
+						className="flex-1 overflow-y-auto bg-gradient-to-b from-white/50 via-transparent to-white/50 dark:from-neutral-900/50 dark:via-transparent dark:to-neutral-900/50 min-h-0"
+					>
 						<Messages />
-					</div>
+					</motion.div>
 
 					{/* Message Input */}
-					<div className="bg-white dark:bg-dark-surface border-t border-neutral-200 dark:border-neutral-800 p-4">
+					<motion.div 
+						initial={{ y: 20, opacity: 0 }}
+						animate={{ y: 0, opacity: 1 }}
+						className="bg-white dark:bg-neutral-900 border-t border-neutral-100 dark:border-neutral-800 flex-shrink-0 z-10"
+					>
 						<MessageInput />
-					</div>
+					</motion.div>
 
 					{/* Video Call Modal */}
 					{showVideoCall && (
@@ -100,22 +137,45 @@ export default MessageContainer;
 const NoChatSelected = () => {
 	const { authUser } = useAuthContext();
 	return (
-		<div className="flex flex-col items-center justify-center w-full h-full bg-gradient-to-br from-neutral-50 to-neutral-100 dark:from-dark-surface dark:to-dark-bg">
-			<div className="text-center space-y-4">
-				<div className="inline-flex items-center justify-center w-24 h-24 rounded-2xl bg-gradient-to-br from-accent-200 to-primary-200 dark:from-accent-900/30 dark:to-primary-900/30 mb-2">
-					<span className="text-5xl">💬</span>
-				</div>
+		<motion.div 
+			initial={{ opacity: 0 }}
+			animate={{ opacity: 1 }}
+			className="flex flex-col items-center justify-center w-full h-full bg-gradient-to-br from-white via-pink-50/30 to-purple-50/20 dark:from-neutral-900 dark:via-neutral-900 dark:to-neutral-800"
+		>
+			{/* Decorative elements */}
+			<div className="absolute top-0 right-0 w-72 h-72 bg-pink-300 rounded-full mix-blend-multiply filter blur-3xl opacity-10 dark:opacity-5"></div>
+			<div className="absolute bottom-0 left-0 w-72 h-72 bg-purple-300 rounded-full mix-blend-multiply filter blur-3xl opacity-10 dark:opacity-5"></div>
+
+			<motion.div 
+				initial={{ scale: 0.8, opacity: 0 }}
+				animate={{ scale: 1, opacity: 1 }}
+				transition={{ delay: 0.1 }}
+				className="text-center space-y-4 sm:space-y-6 relative z-10"
+			>
+				<motion.div 
+					animate={{ y: [0, -10, 0] }}
+					transition={{ repeat: Infinity, duration: 2 }}
+					className="inline-flex items-center justify-center w-24 h-24 sm:w-32 sm:h-32 rounded-3xl bg-gradient-to-br from-pink-400 to-purple-600 shadow-2xl"
+				>
+					<span className="text-5xl sm:text-7xl">💬</span>
+				</motion.div>
 				<div>
-					<h2 className="text-2xl font-bold text-neutral-900 dark:text-neutral-50 mb-2">
+					<h2 className="text-2xl sm:text-4xl font-black bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent mb-2">
 						Welcome, {authUser?.fullName}!
 					</h2>
-					<p className="text-neutral-600 dark:text-neutral-400 text-sm max-w-xs">
-						Select a conversation from the sidebar to start messaging
+					<p className="text-neutral-600 dark:text-neutral-400 text-sm sm:text-base max-w-xs mx-auto leading-relaxed">
+						💭 Select a conversation from the sidebar to start messaging
 					</p>
 				</div>
-				<div className="text-6xl animate-bounce-slow">👋</div>
-			</div>
-		</div>
+				<motion.div 
+					animate={{ rotate: [0, 10, -10, 0] }}
+					transition={{ repeat: Infinity, duration: 1.5 }}
+					className="text-5xl sm:text-6xl"
+				>
+					👋
+				</motion.div>
+			</motion.div>
+		</motion.div>
 	);
 };
 

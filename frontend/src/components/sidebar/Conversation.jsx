@@ -2,11 +2,11 @@ import { useState } from "react";
 import { useSocketContext } from "../../context/SocketContext";
 import useConversation from "../../zustand/useConversation";
 import UserProfile from "../profile/UserProfile";
-import { Avatar, StatusBadge } from "../ui/UIComponents";
+import { Avatar, StatusBadge, ProfileImage } from "../ui/UIComponents";
 import { getAvatarUrl } from "../../utils/avatarUtils";
 import { MdMoreVert } from "react-icons/md";
 
-const Conversation = ({ conversation, lastIdx, emoji }) => {
+const Conversation = ({ conversation, lastIdx, emoji, onCloseSidebar }) => {
 	const { selectedConversation, setSelectedConversation } = useConversation();
 	const [showProfile, setShowProfile] = useState(false);
 	const [showMenu, setShowMenu] = useState(false);
@@ -14,6 +14,14 @@ const Conversation = ({ conversation, lastIdx, emoji }) => {
 	const isSelected = selectedConversation?._id === conversation._id;
 	const { onlineUsers } = useSocketContext();
 	const isOnline = onlineUsers.includes(conversation._id);
+
+	const handleConversationClick = () => {
+		setSelectedConversation(conversation);
+		// Trigger mobile sidebar close callback
+		if (onCloseSidebar) {
+			onCloseSidebar();
+		}
+	};
 
 	return (
 		<>
@@ -23,7 +31,7 @@ const Conversation = ({ conversation, lastIdx, emoji }) => {
 						? "bg-gradient-to-r from-primary-100 to-secondary-100 dark:from-primary-900/40 dark:to-secondary-900/40 shadow-md"
 						: "hover:bg-neutral-100 dark:hover:bg-neutral-700/50"
 				}`}
-				onClick={() => setSelectedConversation(conversation)}
+				onClick={handleConversationClick}
 			>
 				{/* Avatar with Status */}
 				<div
@@ -33,18 +41,18 @@ const Conversation = ({ conversation, lastIdx, emoji }) => {
 						setShowProfile(true);
 					}}
 				>
-					<img
+					<ProfileImage
 						src={conversation.profilePic}
 						alt={conversation.fullName}
-						className="w-12 h-12 rounded-full object-cover ring-2 ring-neutral-200 dark:ring-neutral-700"
+						size="w-12 h-12"
+						initials={conversation.fullName?.charAt(0).toUpperCase() || conversation.username?.charAt(0).toUpperCase() || "?"}
+						className="ring-2 ring-neutral-200 dark:ring-neutral-700"
 					/>
-					{isOnline && (
-						<div className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-white dark:border-dark-surface" />
-					)}
+					<StatusBadge isOnline={isOnline} size="md" />
 				</div>
 
-				{/* Conversation Info */}
-				<div className="flex-1 min-w-0">
+				{/* Conversation Details */}
+				<div className="flex-1 min-w-0 md:flex md:items-center md:justify-between">
 					<div className="flex items-center justify-between gap-2 mb-1">
 						<p className="font-bold text-neutral-900 dark:text-neutral-50 text-sm truncate">
 							{conversation.fullName}

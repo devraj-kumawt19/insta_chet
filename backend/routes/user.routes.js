@@ -1,19 +1,21 @@
 import express from "express";
 import protectRoute from "../middleware/protectRoute.js";
-import { 
-	getUsersForSidebar, 
-	getUserProfile, 
-	updateProfile, 
-	followUser, 
+import {
+	getUsersForSidebar,
+	getUserProfile,
+	updateProfile,
+	followUser,
 	unfollowUser,
 	uploadProfilePic,
-	uploadProfileVideo
+	uploadProfileVideo,
+	searchUsers
 } from "../controllers/user.controller.js";
 import { upload } from "../middleware/upload.js";
 
 const router = express.Router();
 
 router.get("/", protectRoute, getUsersForSidebar);
+router.get("/search", protectRoute, searchUsers);
 router.get("/profile/:userId", protectRoute, getUserProfile);
 router.put("/profile/update", protectRoute, updateProfile);
 router.post("/follow/:userId", protectRoute, followUser);

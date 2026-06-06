@@ -16,11 +16,8 @@ export const signup = async (req, res) => {
 			return res.status(400).json({ error: "Username already exists" });
 		}
 
-		// HASH PASSWORD HERE
 		const salt = await bcrypt.genSalt(10);
 		const hashedPassword = await bcrypt.hash(password, salt);
-
-		// https://avatar-placeholder.iran.liara.run/
 
 		const boyProfilePic = `https://avatar.iran.liara.run/public/boy?username=${username}`;
 		const girlProfilePic = `https://avatar.iran.liara.run/public/girl?username=${username}`;
@@ -34,7 +31,6 @@ export const signup = async (req, res) => {
 		});
 
 		if (newUser) {
-			// Generate JWT token here
 			generateTokenAndSetCookie(newUser._id, res);
 			await newUser.save();
 
@@ -43,6 +39,11 @@ export const signup = async (req, res) => {
 				fullName: newUser.fullName,
 				username: newUser.username,
 				profilePic: newUser.profilePic,
+				bio: newUser.bio,
+				gender: newUser.gender,
+				followers: newUser.followers,
+				following: newUser.following,
+				createdAt: newUser.createdAt,
 			});
 		} else {
 			res.status(400).json({ error: "Invalid user data" });
@@ -70,6 +71,11 @@ export const login = async (req, res) => {
 			fullName: user.fullName,
 			username: user.username,
 			profilePic: user.profilePic,
+			bio: user.bio,
+			gender: user.gender,
+			followers: user.followers,
+			following: user.following,
+			createdAt: user.createdAt,
 		});
 	} catch (error) {
 		console.log("Error in login controller", error.message);

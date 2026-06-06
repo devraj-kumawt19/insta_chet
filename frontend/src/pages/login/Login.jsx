@@ -40,9 +40,9 @@ const Login = () => {
 						<span className="text-3xl font-bold text-white">💬</span>
 					</div>
 					<h1 className="text-4xl font-bold bg-gradient-to-r from-primary-600 to-accent-600 bg-clip-text text-transparent mb-2">
-						ChatApp
+						ChetGram
 					</h1>
-					<p className="text-neutral-600 dark:text-neutral-400">Connect instantly, chat freely</p>
+					<p className="text-neutral-600 dark:text-neutral-400">Chat, Posts & Stories</p>
 				</div>
 
 				{/* Login Card */}

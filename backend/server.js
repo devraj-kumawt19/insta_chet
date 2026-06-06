@@ -8,6 +8,8 @@ import { fileURLToPath } from "url";
 import authRoutes from "./routes/auth.routes.js";
 import messageRoutes from "./routes/message.routes.js";
 import userRoutes from "./routes/user.routes.js";
+import postRoutes from "./routes/post.routes.js";
+import storyRoutes from "./routes/story.routes.js";
 
 import connectToMongoDB from "./db/connectToMongoDB.js";
 import { app, server } from "./socket/socket.js";
@@ -23,14 +25,15 @@ const PORT = process.env.PORT || 8080;
 const corsOptions = {
 	origin: process.env.ALLOWED_ORIGINS 
 		? process.env.ALLOWED_ORIGINS.split(",")
-		: ["http://localhost:5173", "http://localhost:5174", "http://localhost:8080", "http://localhost:3000", "https://insta-chet.onrender.com"],
+		: ["http://localhost:5173", "http://localhost:5174", "http://localhost:5175", "http://localhost:8080", "http://localhost:3000", "https://insta-chet.onrender.com"],
 	credentials: true,
 	methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
 	allowedHeaders: ["Content-Type", "Authorization"],
 };
 
 app.use(cors(corsOptions)); // Apply CORS middleware
-app.use(express.json()); // to parse the incoming requests with JSON payloads (from req.body)
+app.use(express.json({ limit: '50mb' })); // to parse the incoming requests with JSON payloads (from req.body)
+app.use(express.urlencoded({ limit: '50mb', extended: true })); // for form data with large payloads
 app.use(cookieParser());
 
 // Serve uploaded files
@@ -39,6 +42,8 @@ app.use("/uploads", express.static(path.join(__dirname, "../frontend/public/uplo
 app.use("/api/auth", authRoutes);
 app.use("/api/messages", messageRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/posts", postRoutes);
+app.use("/api/stories", storyRoutes);
 
 app.use(express.static(path.join(__dirname, "../frontend/dist")));
 

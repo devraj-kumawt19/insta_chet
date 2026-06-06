@@ -85,7 +85,7 @@ const ProfileEditor = ({ onClose, onUpdate }) => {
 			const formDataToSend = new FormData();
 			formDataToSend.append("profilePic", fileInputRef.current.files[0]);
 
-			const response = await apiPost("/users/upload-profile-pic", formDataToSend);
+			const response = await apiPost("/api/users/upload-profile-pic", formDataToSend);
 			setProfilePic(response.profilePic);
 			setPreviewPic(null);
 			if (fileInputRef.current) {
@@ -110,7 +110,7 @@ const ProfileEditor = ({ onClose, onUpdate }) => {
 			const formDataToSend = new FormData();
 			formDataToSend.append("profileVideo", videoInputRef.current.files[0]);
 
-			const response = await apiPost("/users/upload-profile-video", formDataToSend);
+			const response = await apiPost("/api/users/upload-profile-video", formDataToSend);
 			setProfileVideo(response.profileVideo);
 			setPreviewVideo(null);
 			if (videoInputRef.current) {
@@ -138,7 +138,7 @@ const ProfileEditor = ({ onClose, onUpdate }) => {
 				profileVideo,
 			};
 
-			const response = await apiPut("/users/profile/update", updatedData);
+			const response = await apiPut("/api/users/profile/update", updatedData);
 			setAuthUser(response);
 			toast.success("Profile updated successfully!");
 			onUpdate?.();

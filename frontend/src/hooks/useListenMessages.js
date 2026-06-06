@@ -14,7 +14,8 @@ const useListenMessages = () => {
 			newMessage.shouldShake = true;
 			const sound = new Audio(notificationSound);
 			sound.play();
-			setMessages([...messages, newMessage]);
+			// Add new messages at the BEGINNING (position 0) so they appear at top
+			setMessages([newMessage, ...messages]);
 		});
 
 		return () => socket?.off("newMessage");

@@ -1,109 +1,38 @@
-import { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-	MdEdit,
 	MdVerified,
+	MdEdit,
 	MdGridOn,
 	MdBookmark,
 	MdFavorite,
-	MdPersonAdd,
-	MdPersonRemove,
-	MdSend,
-	MdCheck,
 } from "react-icons/md";
-
-import { useAuthContext } from "../../context/AuthContext";
-import useGetUserProfile from "../../hooks/useGetUserProfile";
-import useFollowUser from "../../hooks/useFollowUser";
-import useGetUserPosts from "../../hooks/useGetUserPosts";
-import EditProfile from "./EditProfile";
-import { ProfileImage } from "../ui/UIComponents";
-
+import { ProfileImage } from "./UIComponents";
 
 const formatCount = (num = 0) => {
-	if (num >= 1000000)
-		return (num / 1000000).toFixed(1) + "M";
-
-	if (num >= 1000)
-		return (num / 1000).toFixed(1) + "K";
-
-	return num;
+	if (num >= 1_000_000) return (num / 1_000_000).toFixed(1).replace(/\.0$/, "") + "M";
+	if (num >= 1_000) return (num / 1_000).toFixed(1).replace(/\.0$/, "") + "K";
+	return num.toLocaleString();
 };
 
-
-const UserProfile = ({ userId }) => {
-
-	const { authUser } = useAuthContext();
-
-	const {
-		user,
-		loading
-	} = useGetUserProfile(userId);
-
-
-	const {
-		posts: userPosts
-	} = useGetUserPosts(userId);
-
-
-	const {
-		followUser,
-		unfollowUser,
-		loading: followLoading
-	} = useFollowUser();
-
-
-
-	const [showEditModal, setShowEditModal] = useState(false);
+const ProfileCard = ({
+	profile = {},
+	onEdit = () => { },
+	onFollow = () => { },
+}) => {
 	const [activeTab, setActiveTab] = useState("posts");
-	const [isFollowing, setIsFollowing] = useState(false);
-	const [messageSent, setMessageSent] = useState(false);
 
-	const isOwn = authUser?._id === user?._id;
+	const tabs = [
+		{ id: "posts", icon: <MdGridOn size={18} />, label: "Posts" },
+		{ id: "saved", icon: <MdBookmark size={18} />, label: "Saved" },
+		{ id: "liked", icon: <MdFavorite size={18} />, label: "Liked" },
+	];
 
-	useEffect(() => {
-		if (user && authUser) {
-			setIsFollowing(
-				user.followers?.some(
-					f => f._id === authUser._id
-				)
-			);
-		}
-	}, [user, authUser]);
-
-	const handleFollow = async () => {
-		const res = await followUser(userId);
-		if (res) setIsFollowing(true);
-	};
-
-	const handleUnfollow = async () => {
-		const res = await unfollowUser(userId);
-		if (res) setIsFollowing(false);
-	};
-
-	const handleMessage = () => {
-		setMessageSent(true);
-		setTimeout(() => setMessageSent(false), 2000);
-	};
-
-	if (loading) {
-		return (
-			<div className="flex items-center justify-center h-screen">
-				<div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 dark:border-white"></div>
-			</div>
-		);
-	}
-
-	if (!user) {
-		return (
-			<div className="text-center mt-20 text-gray-500">
-				User not found
-			</div>
-		);
-	}
+	// Use real posts from profile or empty array
+	const posts = profile.posts || [];
 
 	return (
-		<div className="w-full min-h-screen bg-white dark:bg-neutral-950">
+		<div className="w-full min-h-screen bg-white dark:bg-neutral-950 overflow-y-auto">
 			{/* PROFILE HEADER SECTION */}
 			<div className="border-b border-gray-200 dark:border-neutral-800">
 				<div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
@@ -117,10 +46,10 @@ const UserProfile = ({ userId }) => {
 						>
 							<div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full overflow-hidden border-2 border-gray-200 dark:border-neutral-700 shadow-md">
 								<ProfileImage
-									src={user.profilePic}
-									alt={user.fullName}
+									src={profile.profilePic}
+									alt={profile.fullName}
 									size="w-full h-full"
-									initials={user.fullName?.charAt(0)}
+									initials={profile.fullName?.charAt(0).toUpperCase() || "?"}
 									className="w-full h-full object-cover"
 									showDefault={true}
 								/>
@@ -133,79 +62,34 @@ const UserProfile = ({ userId }) => {
 							<div>
 								<div className="flex items-center gap-3 mb-4 flex-wrap">
 									<h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
-										{user.username}
+										{profile.username}
 									</h1>
-									{user.verified && (
+									{profile.verified && (
 										<MdVerified className="text-blue-500 text-xl" />
 									)}
 
 									{/* Action Buttons */}
-									{isOwn ? (
+									{profile.isOwnProfile && (
 										<motion.button
 											whileHover={{ scale: 1.05 }}
 											whileTap={{ scale: 0.95 }}
-											onClick={() => setShowEditModal(true)}
+											onClick={onEdit}
 											className="px-5 py-2 bg-gray-200 dark:bg-neutral-800 hover:bg-gray-300 dark:hover:bg-neutral-700 text-gray-900 dark:text-white font-semibold rounded-lg transition-colors flex items-center gap-2"
 										>
 											<MdEdit size={18} />
 											Edit Profile
 										</motion.button>
-									) : (
-										<div className="flex gap-2 flex-wrap">
-											<motion.button
-												whileHover={{ scale: 1.05 }}
-												whileTap={{ scale: 0.95 }}
-												disabled={followLoading}
-												onClick={isFollowing ? handleUnfollow : handleFollow}
-												className={`px-6 py-2 rounded-lg font-semibold transition-all flex items-center gap-2 ${
-													isFollowing
-														? "bg-gray-200 dark:bg-neutral-800 text-gray-900 dark:text-white hover:bg-gray-300 dark:hover:bg-neutral-700"
-														: "bg-blue-500 hover:bg-blue-600 text-white"
-												}`}
-											>
-												{isFollowing ? (
-													<>
-														<MdPersonRemove size={18} />
-														Following
-													</>
-												) : (
-													<>
-														<MdPersonAdd size={18} />
-														Follow
-													</>
-												)}
-											</motion.button>
-
-											<motion.button
-												whileHover={{ scale: 1.05 }}
-												whileTap={{ scale: 0.95 }}
-												onClick={handleMessage}
-												className="px-6 py-2 bg-gray-200 dark:bg-neutral-800 hover:bg-gray-300 dark:hover:bg-neutral-700 text-gray-900 dark:text-white font-semibold rounded-lg transition-colors flex items-center gap-2"
-											>
-												{messageSent ? (
-													<>
-														<MdCheck size={18} />
-														Sent!
-													</>
-												) : (
-													<>
-														<MdSend size={18} />
-														Message
-													</>
-												)}
-											</motion.button>
-										</div>
 									)}
 								</div>
 
 								{/* Full Name & Bio */}
 								<div className="mb-3">
 									<p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">
-										<span className="font-semibold text-gray-900 dark:text-white">{user.fullName}</span>
+										<span className="font-semibold text-gray-900 dark:text-white">{profile.fullName}</span>
 									</p>
-									{user.bio && (
+									{profile.bio && (
 										<p className="text-sm text-gray-700 dark:text-gray-300 mt-2">
-											{user.bio}
+											{profile.bio}
 										</p>
 									)}
 								</div>
@@ -215,16 +99,16 @@ const UserProfile = ({ userId }) => {
 							<div className="flex gap-4 sm:gap-8">
 								<motion.div whileHover={{ y: -2 }} className="text-center sm:text-left cursor-pointer">
 									<p className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">
-										{userPosts?.length || 0}
+										{posts?.length || 0}
 									</p>
 									<p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
-										Post{(userPosts?.length || 0) !== 1 ? "s" : ""}
+										Post{(posts?.length || 0) !== 1 ? "s" : ""}
 									</p>
 								</motion.div>
 
 								<motion.div whileHover={{ y: -2 }} className="text-center sm:text-left cursor-pointer">
 									<p className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">
-										{formatCount(user.followers?.length || 0)}
+										{formatCount(profile.followers?.length || 0)}
 									</p>
 									<p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
 										Followers
@@ -233,7 +117,7 @@ const UserProfile = ({ userId }) => {
 
 								<motion.div whileHover={{ y: -2 }} className="text-center sm:text-left cursor-pointer">
 									<p className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">
-										{formatCount(user.following?.length || 0)}
+										{formatCount(profile.following?.length || 0)}
 									</p>
 									<p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
 										Following
@@ -249,11 +133,7 @@ const UserProfile = ({ userId }) => {
 			<div className="border-b border-gray-200 dark:border-neutral-800">
 				<div className="max-w-4xl mx-auto px-4 sm:px-6">
 					<div className="flex gap-6 sm:gap-8">
-						{[
-							{ id: "posts", label: "Posts", icon: <MdGridOn size={18} /> },
-							{ id: "saved", label: "Saved", icon: <MdBookmark size={18} /> },
-							{ id: "liked", label: "Liked", icon: <MdFavorite size={18} /> },
-						].map((tab) => (
+						{tabs.map((tab) => (
 							<motion.button
 								key={tab.id}
 								onClick={() => setActiveTab(tab.id)}
@@ -275,7 +155,7 @@ const UserProfile = ({ userId }) => {
 			<div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
 				{activeTab === "posts" && (
 					<AnimatePresence mode="wait">
-						{userPosts && userPosts.length > 0 ? (
+						{posts && posts.length > 0 ? (
 							<motion.div
 								key="posts-grid"
 								initial={{ opacity: 0 }}
@@ -283,9 +163,9 @@ const UserProfile = ({ userId }) => {
 								exit={{ opacity: 0 }}
 								className="grid grid-cols-3 gap-1 sm:gap-2"
 							>
-								{userPosts.map((post, idx) => (
+								{posts.map((post, idx) => (
 									<motion.div
-										key={post._id}
+										key={post._id || idx}
 										initial={{ opacity: 0 }}
 										animate={{ opacity: 1 }}
 										transition={{ delay: idx * 0.05 }}
@@ -301,10 +181,6 @@ const UserProfile = ({ userId }) => {
 											<div className="text-white flex items-center gap-1">
 												<MdFavorite size={18} />
 												<span className="text-sm font-semibold">{post.likes?.length || 0}</span>
-											</div>
-											<div className="text-white flex items-center gap-1">
-												<MdCheck size={18} />
-												<span className="text-sm font-semibold">{post.comments?.length || 0}</span>
 											</div>
 										</div>
 									</motion.div>
@@ -343,17 +219,8 @@ const UserProfile = ({ userId }) => {
 					</motion.div>
 				)}
 			</div>
-
-			{/* EDIT MODAL */}
-			{showEditModal && (
-				<EditProfile
-					onClose={() => setShowEditModal(false)}
-					onProfileUpdate={() => setShowEditModal(false)}
-				/>
-			)}
 		</div>
 	);
 };
 
-
-export default UserProfile;
+export default ProfileCard;

@@ -10,6 +10,7 @@ const server = http.createServer(app);
 const getAllowedOrigins = () => {
 	const allowedOrigins = [
 		"http://localhost:5173", // Vite dev server
+		"http://localhost:5174", // Vite dev server (alternative port)
 		"http://localhost:8080", // Backend dev
 		"http://localhost:3000", // Alternative frontend port
 		"https://insta-chet.onrender.com", // Production URL

@@ -1,8 +1,10 @@
+import { motion } from "framer-motion";
 import { useAuthContext } from "../../context/AuthContext";
 import { extractTime } from "../../utils/extractTime";
 import { getAvatarUrl } from "../../utils/avatarUtils";
 import useConversation from "../../zustand/useConversation";
 import { MdCheckCircle, MdDone } from "react-icons/md";
+import { ProfileImage } from "../ui/UIComponents";
 
 const Message = ({ message }) => {
 	const { authUser } = useAuthContext();
@@ -16,48 +18,70 @@ const Message = ({ message }) => {
 	const shakeClass = message.shouldShake ? "animate-shake" : "";
 
 	return (
-		<div className={`flex gap-3 ${fromMe ? "flex-row-reverse" : "flex-row"} animate-fade-in`}>
+		<motion.div 
+			initial={{ opacity: 0, y: 10 }}
+			animate={{ opacity: 1, y: 0 }}
+			transition={{ duration: 0.2 }}
+			className={`flex gap-2 sm:gap-3 px-2 sm:px-4 py-1 ${fromMe ? "flex-row-reverse" : "flex-row"}`}
+		>
 			{/* Avatar */}
-			<div className="flex-shrink-0">
-				<img
+			<motion.div 
+				whileHover={{ scale: 1.1 }}
+				className="flex-shrink-0 cursor-pointer group"
+			>
+				<ProfileImage
 					src={profilePic}
 					alt="User avatar"
-					className="w-8 h-8 rounded-full object-cover ring-1 ring-neutral-200 dark:ring-neutral-700"
+					size="w-8 h-8 sm:w-10 sm:h-10"
+					initials={fromMe ? authUser?.fullName?.charAt(0).toUpperCase() || "?" : selectedConversation?.fullName?.charAt(0).toUpperCase() || "?"}
+					className="ring-2 ring-transparent group-hover:ring-pink-400 transition-all shadow-sm"
 				/>
-			</div>
+			</motion.div>
 
 			{/* Message Content */}
-			<div className={`flex flex-col ${fromMe ? "items-end" : "items-start"} max-w-xs sm:max-w-sm`}>
-				{/* Message Bubble */}
-				<div
-					className={`group relative px-4 py-2 rounded-2xl transition-all duration-200 ${
-						fromMe
-							? "bg-gradient-to-r from-primary-600 to-primary-700 text-white rounded-br-none shadow-lg hover:shadow-xl"
-							: "bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-50 rounded-bl-none shadow-sm hover:shadow-md"
-					} ${shakeClass}`}
-				>
-					<p className="text-sm break-words">{message.message}</p>
+			<div className={`flex flex-col max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg ${fromMe ? "items-end" : "items-start"}`}>
+				{/* Sender Info */}
+				<div className={`text-xs text-neutral-500 dark:text-neutral-400 px-3 font-semibold ${fromMe ? "text-right" : "text-left"}`}>
+					{!fromMe && selectedConversation?.username}
 				</div>
+				
+				{/* Message Bubble */}
+				<motion.div
+					whileHover={{ scale: 1.02 }}
+					className={`group relative px-3 sm:px-4 py-2 sm:py-3 rounded-3xl transition-all duration-200 shadow-sm hover:shadow-md w-fit ${
+						fromMe
+							? "bg-gradient-to-r from-pink-500 to-rose-500 text-white rounded-br-xl hover:from-pink-600 hover:to-rose-600"
+							: "bg-gradient-to-br from-neutral-100 to-neutral-50 dark:from-neutral-800 dark:to-neutral-900 text-neutral-900 dark:text-neutral-50 rounded-bl-xl hover:shadow-lg"
+					} ${message.shouldShake ? "animate-shake" : ""}`}
+				>
+					<p className="text-sm sm:text-base break-words leading-relaxed">{message.message}</p>
+				</motion.div>
 
 				{/* Timestamp & Status */}
-				<div
-					className={`flex items-center gap-2 mt-1 text-xs text-neutral-600 dark:text-neutral-400 ${
+				<motion.div
+					initial={{ opacity: 0 }}
+					animate={{ opacity: 1 }}
+					transition={{ delay: 0.1 }}
+					className={`flex items-center gap-1.5 mt-1 text-xs text-neutral-500 dark:text-neutral-400 px-3 ${
 						fromMe ? "flex-row-reverse" : "flex-row"
 					}`}
 				>
-					<span>{formattedTime}</span>
 					{fromMe && (
-						<div className="flex items-center">
+						<motion.div 
+							animate={{ scale: message.seen ? 1.1 : 1 }}
+							className="flex items-center"
+						>
 							{message.seen ? (
-								<MdCheckCircle className="text-primary-600 dark:text-primary-400" title="Seen" />
+								<MdCheckCircle className="text-pink-500 dark:text-pink-400 text-sm" title="Seen" />
 							) : (
-								<MdDone className="text-neutral-500 dark:text-neutral-600" title="Sent" />
+								<MdDone className="text-neutral-400 dark:text-neutral-600 text-sm" title="Sent" />
 							)}
-						</div>
+						</motion.div>
 					)}
-				</div>
+					<span className="font-mono text-xs">{formattedTime}</span>
+				</motion.div>
 			</div>
-		</div>
+		</motion.div>
 	);
 };
 

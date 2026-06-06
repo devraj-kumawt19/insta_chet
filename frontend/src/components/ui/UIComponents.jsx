@@ -1,3 +1,5 @@
+import React, { useState } from "react";
+
 // Button Components
 export const Button = ({
 	children,
@@ -77,8 +79,28 @@ export const Badge = ({ children, variant = "primary", className = "", ...props 
 	);
 };
 
+// Default Avatar Component (shows user icon when no profile picture)
+export const DefaultAvatar = ({ size = "md", initials = "?" }) => {
+	const sizeStyles = {
+		sm: "w-8 h-8 text-xs",
+		md: "w-10 h-10 text-sm",
+		lg: "w-16 h-16 text-lg",
+		xl: "w-24 h-24 text-2xl",
+	};
+
+	return (
+		<div
+			className={`${sizeStyles[size]} rounded-full flex items-center justify-center font-bold bg-gradient-to-br from-slate-300 to-slate-400 dark:from-slate-600 dark:to-slate-700 text-slate-700 dark:text-slate-200 border-2 border-slate-400 dark:border-slate-600`}
+		>
+			{initials}
+		</div>
+	);
+};
+
 // Avatar Component
-export const Avatar = ({ src, alt = "Avatar", size = "md", status = null, className = "" }) => {
+export const Avatar = ({ src, alt = "Avatar", size = "md", status = null, className = "", fallback = null }) => {
+	const [imageError, setImageError] = React.useState(false);
+
 	const sizeStyles = {
 		sm: "w-8 h-8",
 		md: "w-10 h-10",
@@ -86,13 +108,26 @@ export const Avatar = ({ src, alt = "Avatar", size = "md", status = null, classN
 		xl: "w-24 h-24",
 	};
 
+	// Check if src is valid
+	const hasValidSrc = src && src.trim() && !src.includes("undefined");
+	const shouldShowFallback = imageError || !hasValidSrc;
+
 	return (
 		<div className={`relative ${sizeStyles[size]}`}>
-			<img
-				src={src}
-				alt={alt}
-				className={`w-full h-full rounded-full object-cover border-2 border-primary-300 dark:border-primary-700 ${className}`}
-			/>
+			{shouldShowFallback ? (
+				fallback ? (
+					fallback
+				) : (
+					<DefaultAvatar size={size} initials={alt?.charAt(0).toUpperCase() || "?"} />
+				)
+			) : (
+				<img
+					src={src}
+					alt={alt}
+					onError={() => setImageError(true)}
+					className={`w-full h-full rounded-full object-cover border-2 border-primary-300 dark:border-primary-700 ${className}`}
+				/>
+			)}
 			{status && (
 				<div
 					className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white dark:border-dark-surface ${
@@ -103,6 +138,46 @@ export const Avatar = ({ src, alt = "Avatar", size = "md", status = null, classN
 				/>
 			)}
 		</div>
+	);
+};
+
+// Profile Image Component - for direct img tags with fallback support
+export const ProfileImage = ({
+	src,
+	alt = "Profile",
+	size = "w-10 h-10",
+	className = "",
+	showDefault = true,
+	initials = "?",
+	onError = null,
+}) => {
+	const [imageError, setImageError] = React.useState(false);
+
+	const hasValidSrc = src && src.trim() && !src.includes("undefined");
+	const shouldShowFallback = imageError || !hasValidSrc;
+
+	const handleError = (e) => {
+		setImageError(true);
+		if (onError) onError(e);
+	};
+
+	if (shouldShowFallback && showDefault) {
+		return (
+			<div
+				className={`${size} rounded-full flex items-center justify-center font-bold bg-gradient-to-br from-slate-300 to-slate-400 dark:from-slate-600 dark:to-slate-700 text-slate-700 dark:text-slate-200 border-2 border-slate-400 dark:border-slate-600 ${className}`}
+			>
+				{initials}
+			</div>
+		);
+	}
+
+	return (
+		<img
+			src={src}
+			alt={alt}
+			onError={handleError}
+			className={`${size} rounded-full object-cover ${className}`}
+		/>
 	);
 };
 
