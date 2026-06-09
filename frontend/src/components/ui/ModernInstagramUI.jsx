@@ -72,24 +72,25 @@ const ModernInstagramUI = () => {
 							) : postsError ? (
 								<div className="flex-1 flex items-center justify-center py-12 px-4">
 									<p className="text-sm sm:text-base text-neutral-600 dark:text-neutral-400 text-center">
-										{postsError}
+										Error: {postsError}
 									</p>
 								</div>
-							) : realPosts && realPosts.length > 0 ? (
+							) : realPosts && Array.isArray(realPosts) && realPosts.length > 0 ? (
 								<div className="flex-1 overflow-y-auto">
 									<div className="max-w-2xl mx-auto">
 										<Stories />
 										<div className="space-y-4 sm:space-y-5 md:space-y-6 mt-4 sm:mt-5 md:mt-6">
-											{realPosts.map((post) => (
-												<PostCard key={post._id || post.id} post={post} />
-											))}
+											{realPosts.map((post) => {
+												if (!post || !post._id) return null;
+												return <PostCard key={post._id} post={post} />;
+											})}
 										</div>
 									</div>
 								</div>
 							) : (
 								<div className="flex-1 flex items-center justify-center py-12 px-4">
 									<p className="text-sm sm:text-base text-neutral-600 dark:text-neutral-400 text-center">
-										{postsError}
+										No posts yet. Follow users to see their posts!
 									</p>
 								</div>
 							)}

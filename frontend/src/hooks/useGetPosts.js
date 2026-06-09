@@ -14,7 +14,15 @@ const useGetPosts = () => {
 				const data = await apiCall("/api/posts/feed", {
 					method: "GET",
 				});
-				setPosts(data || []);
+				// Ensure data is an array - handle null, undefined, or malformed responses
+				if (Array.isArray(data)) {
+					setPosts(data);
+				} else if (data === null || data === undefined) {
+					setPosts([]);
+				} else {
+					console.warn("API returned non-array data:", data);
+					setPosts([]);
+				}
 			} catch (err) {
 				console.error("Error fetching posts:", err);
 				setError(err.message || "Failed to fetch posts");

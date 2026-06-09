@@ -9,6 +9,18 @@ const usePostInteractions = (postId) => {
 	const [isLiking, setIsLiking] = useState(false);
 	const [isCommentingLoading, setIsCommentingLoading] = useState(false);
 
+	// Guard against undefined postId
+	if (!postId) {
+		console.warn("usePostInteractions called without valid postId");
+		return {
+			likePost: async () => { throw new Error("Invalid post ID"); },
+			addComment: async () => { throw new Error("Invalid post ID"); },
+			deletePost: async () => { throw new Error("Invalid post ID"); },
+			isLiking: false,
+			isCommentingLoading: false,
+		};
+	}
+
 	const likePost = async (currentLikes, userId) => {
 		try {
 			setIsLiking(true);

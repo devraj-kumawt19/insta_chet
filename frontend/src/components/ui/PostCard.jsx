@@ -23,6 +23,13 @@ const PostCard = ({ post }) => {
 	const [likeCount, setLikeCount] = useState(0);
 	const [commentCount, setCommentCount] = useState(0);
 	const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+	// Validate post before using it
+	if (!post || !post.author || !post._id) {
+		return null;
+	}
+
+	// Move hook call after validation - hooks must always be called
 	const { likePost, isLiking } = usePostInteractions(post._id);
 
 	// Transform backend data to match UI expectations
@@ -36,19 +43,25 @@ const PostCard = ({ post }) => {
 		}
 	}, [post, authUser?._id]);
 
-	if (!post || !post.author) {
-		return null;
-	}
-
 	const authorName = post.author.username || post.author.fullName || "Unknown";
+	// Safe optional chaining for profilePic - guard against undefined/null
 	const authorAvatar =
-		post.author.profilePic &&
-			!post.author.profilePic.includes("avatar.iran.liara.run")
-			? post.author.profilePic
-			: `https://api.dicebear.com/9.x/initials/svg?seed=${authorName}`;
+		post.author?.profilePic &&
+		post.author.profilePic.trim() !== "" &&
+		!post.author.profilePic.includes("avatar.iran.liara.run") &&
+		!post.author.profilePic.includes("undefined")
+		? post.author.profilePic
+		: `https://api.dicebear.com/9.x/initials/svg?seed=${encodeURIComponent(authorName)}`;
 	const postImage = post.image;
 	const postCaption = post.caption;
-	const postTime = extractTime(post.createdAt);
+	let postTime = "";
+
+	try {
+		postTime = extractTime(post.createdAt);
+	} catch (err) {
+		console.log("time error", err);
+		postTime = "";
+	}
 	const images = postImage ? [postImage] : [];
 
 	const handleLike = async () => {
@@ -211,14 +224,10 @@ const PostCard = ({ post }) => {
 				<motion.div whileHover={{ scale: 1.02 }} className="flex items-center gap-3 cursor-pointer">
 					<div className="relative">
 						<img
-							src={
-								authorAvatar.includes("avatar.iran.liara.run")
-									? `https://api.dicebear.com/9.x/initials/svg?seed=${authorName}`
-									: authorAvatar
-							}
+							src={authorAvatar}
 							onError={(e) => {
 								e.currentTarget.src =
-									`https://api.dicebear.com/9.x/initials/svg?seed=${authorName}`;
+									`https://api.dicebear.com/9.x/initials/svg?seed=${encodeURIComponent(authorName)}`;
 							}}
 							alt={authorName}
 							className="w-12 h-12 rounded-full object-cover border-2 border-pink-400 dark:border-pink-500 shadow-md"
@@ -249,7 +258,11 @@ const PostCard = ({ post }) => {
 						animate={{ opacity: 1, scale: 1 }}
 						exit={{ opacity: 0, scale: 0.95 }}
 						transition={{ duration: 0.3 }}
-						src={postImage}
+						src={postImage || ""}
+						onError={(e) => {
+							console.error("Failed to load post image");
+							e.currentTarget.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Crect fill='%23e5e7eb' width='400' height='400'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='18' fill='%239ca3af'%3EImage not available%3C/text%3E%3C/svg%3E";
+						}}
 						alt="Post content"
 						className="w-full aspect-square object-cover"
 					/>
