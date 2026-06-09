@@ -41,7 +41,11 @@ const PostCard = ({ post }) => {
 	}
 
 	const authorName = post.author.username || post.author.fullName || "Unknown";
-	const authorAvatar = post.author.profilePic || "https://api.dicebear.com/7.x/avataaars/svg?seed=user";
+	const authorAvatar =
+		post.author.profilePic &&
+			!post.author.profilePic.includes("avatar.iran.liara.run")
+			? post.author.profilePic
+			: `https://api.dicebear.com/9.x/initials/svg?seed=${authorName}`;
 	const postImage = post.image;
 	const postCaption = post.caption;
 	const postTime = extractTime(post.createdAt);
@@ -207,7 +211,15 @@ const PostCard = ({ post }) => {
 				<motion.div whileHover={{ scale: 1.02 }} className="flex items-center gap-3 cursor-pointer">
 					<div className="relative">
 						<img
-							src={authorAvatar}
+							src={
+								authorAvatar.includes("avatar.iran.liara.run")
+									? `https://api.dicebear.com/9.x/initials/svg?seed=${authorName}`
+									: authorAvatar
+							}
+							onError={(e) => {
+								e.currentTarget.src =
+									`https://api.dicebear.com/9.x/initials/svg?seed=${authorName}`;
+							}}
 							alt={authorName}
 							className="w-12 h-12 rounded-full object-cover border-2 border-pink-400 dark:border-pink-500 shadow-md"
 						/>
