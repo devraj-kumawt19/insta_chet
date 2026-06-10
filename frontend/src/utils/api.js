@@ -1,6 +1,15 @@
 // Centralized API configuration for production and development
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
+const getAPIBaseURL = () => {
+	// In production (Render), use relative paths to same domain
+	if (import.meta.env.PROD) {
+		return ""; // Empty string = same domain
+	}
+	// In development, use VITE_API_URL or fallback to localhost:8080
+	return import.meta.env.VITE_API_URL || "http://localhost:8080";
+};
+
+const API_BASE_URL = getAPIBaseURL();
 
 /**
  * Make a fetch request with proper error handling and JSON parsing

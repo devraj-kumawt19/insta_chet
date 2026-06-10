@@ -37,11 +37,20 @@ export const getFeed = async (req, res) => {
 		const followedUserIds = user.following || [];
 		followedUserIds.push(userId);
 
-		const posts = await Post.find({ author: { $in: followedUserIds } })
+		let posts = await Post.find({ author: { $in: followedUserIds } })
 			.populate("author", "fullName username profilePic _id")
 			.populate("comments.user", "fullName username profilePic")
 			.sort({ createdAt: -1 })
 			.limit(50);
+
+		// If no posts from follows, show recent public posts
+		if (posts.length === 0) {
+			posts = await Post.find()
+				.populate("author", "fullName username profilePic _id")
+				.populate("comments.user", "fullName username profilePic")
+				.sort({ createdAt: -1 })
+				.limit(50);
+		}
 
 		res.status(200).json(posts);
 	} catch (error) {
