@@ -12,8 +12,7 @@ const useGetMessages = () => {
 			setLoading(true);
 			try {
 				const data = await apiGet(`/api/messages/${selectedConversation._id}`);
-				// Reverse messages so newest appears at top
-				setMessages(data ? [...data].reverse() : []);
+				setMessages(Array.isArray(data) ? data : []);
 			} catch (error) {
 				toast.error(error.message);
 			} finally {

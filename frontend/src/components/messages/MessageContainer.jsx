@@ -5,13 +5,14 @@ import MessageInput from "./MessageInput";
 import Messages from "./Messages";
 import { useAuthContext } from "../../context/AuthContext";
 import VideoCall from "../video/VideoCall";
-import { Avatar, Button, ProfileImage } from "../ui/UIComponents";
-import { getAvatarUrl } from "../../utils/avatarUtils";
-import { MdCall, MdMoreVert, MdKeyboardArrowLeft } from "react-icons/md";
+import UserProfile from "../profile/UserProfile";
+import { ProfileImage } from "../ui/UIComponents";
+import { MdCall, MdMoreVert, MdKeyboardArrowLeft, MdClose } from "react-icons/md";
 
 const MessageContainer = ({ onBack }) => {
 	const { selectedConversation, setSelectedConversation } = useConversation();
 	const [showVideoCall, setShowVideoCall] = useState(false);
+	const [showProfile, setShowProfile] = useState(false);
 
 	useEffect(() => {
 		return () => setSelectedConversation(null);
@@ -51,6 +52,7 @@ const MessageContainer = ({ onBack }) => {
 							{/* Avatar & Name */}
 							<motion.div 
 								whileHover={{ scale: 1.02 }}
+								onClick={() => setShowProfile(true)}
 								className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0 cursor-pointer group"
 							>
 								<div className="relative flex-shrink-0">
@@ -125,6 +127,27 @@ const MessageContainer = ({ onBack }) => {
 							recipientName={selectedConversation.fullName}
 							onEndCall={() => setShowVideoCall(false)}
 						/>
+					)}
+
+					{/* Profile Modal */}
+					{showProfile && (
+						<div className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm">
+							<motion.div
+								initial={{ opacity: 0, scale: 0.98 }}
+								animate={{ opacity: 1, scale: 1 }}
+								exit={{ opacity: 0, scale: 0.98 }}
+								className="relative h-full w-full overflow-y-auto bg-white dark:bg-neutral-950"
+							>
+								<button
+									onClick={() => setShowProfile(false)}
+									className="fixed right-4 top-4 z-[110] rounded-full bg-white/90 p-3 text-neutral-900 shadow-lg transition hover:bg-neutral-100 dark:bg-neutral-900/90 dark:text-neutral-50 dark:hover:bg-neutral-800"
+									aria-label="Close profile"
+								>
+									<MdClose className="text-2xl" />
+								</button>
+								<UserProfile userId={selectedConversation._id} />
+							</motion.div>
+						</div>
 					)}
 				</>
 			)}

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { motion } from "framer-motion";
 import Navbar from "./Navbar";
 import Stories from "./Stories";
@@ -15,6 +15,7 @@ import UserSearch from "./UserSearch";
 import Reels from "./Reels";
 import { StoriesSkeletonLoader, PostSkeleton } from "./LoadingSkeletons";
 import useGetPosts from "../../hooks/useGetPosts";
+import useListenMessages from "../../hooks/useListenMessages";
 import useLogout from "../../hooks/useLogout";
 import { useAuthContext } from "../../context/AuthContext";
 
@@ -26,6 +27,7 @@ const ModernInstagramUI = () => {
 	const [createMode, setCreateMode] = useState(null); // null, "post", "story"
 	const { posts: realPosts, loading: postsLoading, error: postsError } = useGetPosts();
 	const { logout } = useLogout();
+	useListenMessages();
 
 	const handleTabChange = (tab) => {
 		setActiveTab(tab);

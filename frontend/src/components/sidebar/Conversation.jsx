@@ -1,19 +1,32 @@
 import { useState } from "react";
 import { useSocketContext } from "../../context/SocketContext";
+import { useAuthContext } from "../../context/AuthContext";
 import useConversation from "../../zustand/useConversation";
 import UserProfile from "../profile/UserProfile";
-import { Avatar, StatusBadge, ProfileImage } from "../ui/UIComponents";
-import { getAvatarUrl } from "../../utils/avatarUtils";
+import { StatusBadge, ProfileImage } from "../ui/UIComponents";
+import { extractTime } from "../../utils/extractTime";
 import { MdMoreVert } from "react-icons/md";
 
-const Conversation = ({ conversation, lastIdx, emoji, onCloseSidebar }) => {
+const Conversation = ({ conversation, emoji, onCloseSidebar }) => {
 	const { selectedConversation, setSelectedConversation } = useConversation();
+	const { authUser } = useAuthContext();
 	const [showProfile, setShowProfile] = useState(false);
 	const [showMenu, setShowMenu] = useState(false);
 
 	const isSelected = selectedConversation?._id === conversation._id;
 	const { onlineUsers } = useSocketContext();
 	const isOnline = onlineUsers.includes(conversation._id);
+	const lastMessage = conversation.lastMessage;
+	const lastMessageFromMe =
+		lastMessage?.senderId && authUser?._id && String(lastMessage.senderId) === String(authUser._id);
+	const messagePreview = lastMessage?.message
+		? `${lastMessageFromMe ? "You: " : ""}${lastMessage.message}`
+		: `@${conversation.username}`;
+	const lastMessageTime = conversation.lastMessageAt
+		? extractTime(conversation.lastMessageAt)
+		: lastMessage?.createdAt
+		? extractTime(lastMessage.createdAt)
+		: "";
 
 	const handleConversationClick = () => {
 		setSelectedConversation(conversation);
@@ -57,10 +70,26 @@ const Conversation = ({ conversation, lastIdx, emoji, onCloseSidebar }) => {
 						<p className="font-bold text-neutral-900 dark:text-neutral-50 text-sm truncate">
 							{conversation.fullName}
 						</p>
-						<span className="text-lg flex-shrink-0">{emoji}</span>
+						<div className="flex items-center gap-2 flex-shrink-0">
+							{lastMessageTime && (
+								<span className="text-[11px] text-neutral-500 dark:text-neutral-400">
+									{lastMessageTime}
+								</span>
+							)}
+							{conversation.hasUnread && (
+								<span className="w-2 h-2 rounded-full bg-primary-500" />
+							)}
+							<span className="text-lg">{emoji}</span>
+						</div>
 					</div>
-					<p className="text-xs text-neutral-600 dark:text-neutral-400">
-						@{conversation.username}
+					<p
+						className={`text-xs truncate ${
+							conversation.hasUnread
+								? "font-semibold text-neutral-900 dark:text-neutral-100"
+								: "text-neutral-600 dark:text-neutral-400"
+						}`}
+					>
+						{messagePreview}
 					</p>
 				</div>
 

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
 	MdVerified,
@@ -8,6 +8,7 @@ import {
 	MdFavorite,
 } from "react-icons/md";
 import { ProfileImage } from "./UIComponents";
+import useGetUserPosts from "../../hooks/useGetUserPosts";
 
 const formatCount = (num = 0) => {
 	if (num >= 1_000_000) return (num / 1_000_000).toFixed(1).replace(/\.0$/, "") + "M";
@@ -18,9 +19,10 @@ const formatCount = (num = 0) => {
 const ProfileCard = ({
 	profile = {},
 	onEdit = () => { },
-	onFollow = () => { },
 }) => {
 	const [activeTab, setActiveTab] = useState("posts");
+	const profileId = profile._id || profile.id;
+	const { posts: fetchedPosts, loading: postsLoading } = useGetUserPosts(profileId);
 
 	const tabs = [
 		{ id: "posts", icon: <MdGridOn size={18} />, label: "Posts" },
@@ -28,8 +30,10 @@ const ProfileCard = ({
 		{ id: "liked", icon: <MdFavorite size={18} />, label: "Liked" },
 	];
 
-	// Use real posts from profile or empty array
-	const posts = profile.posts || [];
+	const profilePosts = Array.isArray(profile.posts)
+		? profile.posts.filter((post) => post && typeof post === "object")
+		: [];
+	const posts = fetchedPosts.length > 0 ? fetchedPosts : profilePosts;
 
 	return (
 		<div className="w-full min-h-screen bg-white dark:bg-neutral-950 overflow-y-auto">
@@ -155,7 +159,16 @@ const ProfileCard = ({
 			<div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
 				{activeTab === "posts" && (
 					<AnimatePresence mode="wait">
-						{posts && posts.length > 0 ? (
+						{postsLoading ? (
+							<motion.div
+								key="posts-loading"
+								initial={{ opacity: 0 }}
+								animate={{ opacity: 1 }}
+								className="flex justify-center py-16"
+							>
+								<div className="h-8 w-8 animate-spin rounded-full border-b-2 border-gray-900 dark:border-white" />
+							</motion.div>
+						) : posts && posts.length > 0 ? (
 							<motion.div
 								key="posts-grid"
 								initial={{ opacity: 0 }}

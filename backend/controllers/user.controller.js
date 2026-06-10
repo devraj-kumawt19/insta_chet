@@ -1,10 +1,48 @@
 import User from "../models/user.model.js";
+import Conversation from "../models/conversation.model.js";
 
 export const getUsersForSidebar = async (req, res) => {
 	try {
 		const loggedInUserId = req.user._id;
 
-		const filteredUsers = await User.find({ _id: { $ne: loggedInUserId } }).select("-password");
+		const [users, conversations] = await Promise.all([
+			User.find({ _id: { $ne: loggedInUserId } }).select("-password").lean(),
+			Conversation.find({ participants: loggedInUserId })
+				.select("participants messages updatedAt")
+				.populate({
+					path: "messages",
+					options: { sort: { createdAt: -1 } },
+					perDocumentLimit: 1,
+				})
+				.lean(),
+		]);
+
+		const conversationByUserId = new Map();
+
+		conversations.forEach((conversation) => {
+			const otherUserId = conversation.participants.find(
+				(participantId) => participantId.toString() !== loggedInUserId.toString()
+			);
+
+			if (!otherUserId) return;
+
+			const lastMessage = conversation.messages?.[0] || null;
+			conversationByUserId.set(otherUserId.toString(), {
+				lastMessage,
+				lastMessageAt: lastMessage?.createdAt || conversation.updatedAt,
+			});
+		});
+
+		const filteredUsers = users
+			.map((user) => {
+				const conversationMeta = conversationByUserId.get(user._id.toString());
+				return conversationMeta ? { ...user, ...conversationMeta } : user;
+			})
+			.sort((firstUser, secondUser) => {
+				const firstTime = firstUser.lastMessageAt ? new Date(firstUser.lastMessageAt).getTime() : 0;
+				const secondTime = secondUser.lastMessageAt ? new Date(secondUser.lastMessageAt).getTime() : 0;
+				return secondTime - firstTime;
+			});
 
 		res.status(200).json(filteredUsers);
 	} catch (error) {

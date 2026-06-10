@@ -5,13 +5,14 @@ import { apiPost } from "../utils/api";
 
 const useSendMessage = () => {
 	const [loading, setLoading] = useState(false);
-	const { messages, setMessages, selectedConversation } = useConversation();
+	const { setMessages, selectedConversation, moveConversationToTop } = useConversation();
 
 	const sendMessage = async (message) => {
 		setLoading(true);
 		try {
 			const data = await apiPost(`/api/messages/send/${selectedConversation._id}`, { message });
-			setMessages([...messages, data]);
+			setMessages((currentMessages) => [...currentMessages, data]);
+			moveConversationToTop(selectedConversation._id, data);
 		} catch (error) {
 			toast.error(error.message);
 		} finally {
