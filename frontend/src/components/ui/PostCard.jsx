@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
 	MdFavoriteBorder,
@@ -8,8 +8,7 @@ import {
 	MdBookmark,
 	MdBookmarkBorder,
 	MdMoreVert,
-	MdChevronLeft,
-	MdChevronRight,
+	MdSend,
 } from "react-icons/md";
 import { useAuthContext } from "../../context/AuthContext";
 import usePostInteractions from "../../hooks/usePostInteractions";
@@ -22,26 +21,33 @@ const PostCard = ({ post }) => {
 	const [saved, setSaved] = useState(false);
 	const [likeCount, setLikeCount] = useState(0);
 	const [commentCount, setCommentCount] = useState(0);
-	const [currentImageIndex, setCurrentImageIndex] = useState(0);
-
-	// Validate post before using it
-	if (!post || !post.author || !post._id) {
-		return null;
-	}
-
-	// Move hook call after validation - hooks must always be called
-	const { likePost, isLiking } = usePostInteractions(post._id);
+	const [comments, setComments] = useState([]);
+	const [showComments, setShowComments] = useState(false);
+	const [newComment, setNewComment] = useState("");
+	const { likePost, addComment, isLiking, isCommentingLoading } = usePostInteractions(post?._id);
 
 	// Transform backend data to match UI expectations
 	useEffect(() => {
-		if (post && post.likes) {
+		if (Array.isArray(post?.likes)) {
 			setLikeCount(post.likes.length);
 			setLiked(post.likes.includes(authUser?._id));
+		} else {
+			setLikeCount(0);
+			setLiked(false);
 		}
-		if (post && post.comments) {
+
+		if (Array.isArray(post?.comments)) {
+			setComments(post.comments);
 			setCommentCount(post.comments.length);
+		} else {
+			setComments([]);
+			setCommentCount(0);
 		}
 	}, [post, authUser?._id]);
+
+	if (!post || !post.author || !post._id) {
+		return null;
+	}
 
 	const authorName = post.author.username || post.author.fullName || "Unknown";
 	// Safe optional chaining for profilePic - guard against undefined/null
@@ -62,7 +68,6 @@ const PostCard = ({ post }) => {
 		console.log("time error", err);
 		postTime = "";
 	}
-	const images = postImage ? [postImage] : [];
 
 	const handleLike = async () => {
 		try {
@@ -78,13 +83,89 @@ const PostCard = ({ post }) => {
 		}
 	};
 
-	const nextImage = () => {
-		setCurrentImageIndex((prev) => (prev + 1) % images.length);
+	const handleAddComment = async (event) => {
+		event.preventDefault();
+		const text = newComment.trim();
+		if (!text) return;
+
+		try {
+			const updatedPost = await addComment(text);
+			const updatedComments = Array.isArray(updatedPost?.comments) ? updatedPost.comments : [];
+			setComments(updatedComments);
+			setCommentCount(updatedComments.length);
+			setNewComment("");
+			setShowComments(true);
+		} catch (error) {
+			console.error("Failed to add comment:", error);
+		}
 	};
 
-	const prevImage = () => {
-		setCurrentImageIndex((prev) => (prev - 1 + images.length) % images.length);
-	};
+	const commentsSection = (
+		<AnimatePresence>
+			{showComments && (
+				<motion.div
+					initial={{ opacity: 0, height: 0 }}
+					animate={{ opacity: 1, height: "auto" }}
+					exit={{ opacity: 0, height: 0 }}
+					className="border-t border-neutral-100 dark:border-neutral-800/50 px-3 sm:px-4 py-3"
+				>
+					<div className="max-h-52 overflow-y-auto space-y-3 pr-1">
+						{comments.length > 0 ? (
+							comments.map((comment, idx) => {
+								const commentUser = comment.user || {};
+								const commentName = commentUser.username || commentUser.fullName || "user";
+								return (
+									<div key={comment._id || `${commentName}-${idx}`} className="flex gap-2 text-sm">
+										<ProfileImage
+											src={commentUser.profilePic}
+											alt={commentName}
+											size="w-8 h-8"
+											initials={commentName.charAt(0).toUpperCase()}
+										/>
+										<div className="min-w-0 flex-1 rounded-2xl bg-neutral-50 px-3 py-2 dark:bg-neutral-800/70">
+											<p className="font-bold text-neutral-900 dark:text-neutral-50">
+												@{commentName}
+											</p>
+											<p className="break-words text-neutral-700 dark:text-neutral-300">
+												{comment.text}
+											</p>
+											{comment.createdAt && (
+												<p className="mt-1 text-[11px] text-neutral-500 dark:text-neutral-400">
+													{extractTime(comment.createdAt)}
+												</p>
+											)}
+										</div>
+									</div>
+								);
+							})
+						) : (
+							<p className="py-3 text-center text-xs text-neutral-500 dark:text-neutral-400">
+								No comments yet
+							</p>
+						)}
+					</div>
+
+					<form onSubmit={handleAddComment} className="mt-3 flex items-center gap-2">
+						<input
+							type="text"
+							value={newComment}
+							onChange={(event) => setNewComment(event.target.value)}
+							placeholder="Add a comment..."
+							className="min-w-0 flex-1 rounded-full bg-neutral-100 px-4 py-2 text-sm text-neutral-900 outline-none transition focus:ring-2 focus:ring-pink-400 dark:bg-neutral-800 dark:text-neutral-50"
+						/>
+						<button
+							type="submit"
+							disabled={isCommentingLoading || !newComment.trim()}
+							className="rounded-full bg-pink-600 p-2.5 text-white transition hover:bg-pink-700 disabled:cursor-not-allowed disabled:opacity-50"
+							aria-label="Post comment"
+						>
+							<MdSend className="text-lg" />
+						</button>
+					</form>
+				</motion.div>
+			)}
+		</AnimatePresence>
+	);
 
 	// If no image, don't show carousel
 	if (!postImage) {
@@ -93,10 +174,10 @@ const PostCard = ({ post }) => {
 				initial={{ opacity: 0, y: 20 }}
 				animate={{ opacity: 1, y: 0 }}
 				transition={{ duration: 0.4 }}
-				className="bg-white dark:bg-neutral-900/95 rounded-lg sm:rounded-2xl shadow-sm hover:shadow-lg dark:hover:shadow-2xl dark:shadow-black/30 border border-neutral-100 dark:border-neutral-800 overflow-hidden mb-4 sm:mb-6 transition-all duration-300 backdrop-blur-sm"
+				className="mb-3 overflow-hidden border-y border-neutral-200 bg-white shadow-none dark:border-neutral-800 dark:bg-neutral-950 sm:rounded-xl sm:border"
 			>
 				{/* Post Header */}
-				<div className="px-3 sm:px-4 py-3 flex items-center justify-between border-b border-neutral-100 dark:border-neutral-800/50">
+				<div className="flex items-center justify-between px-3 py-3">
 					<motion.div whileHover={{ scale: 1.02 }} className="flex items-center gap-2 sm:gap-3 cursor-pointer flex-1 min-w-0">
 						<div className="relative flex-shrink-0">
 							<ProfileImage
@@ -134,14 +215,14 @@ const PostCard = ({ post }) => {
 				</div>
 
 				{/* Action Buttons */}
-				<div className="px-2 sm:px-4 py-2 sm:py-3 flex items-center justify-between border-t border-neutral-100 dark:border-neutral-800/50 bg-gradient-to-r from-white/50 to-transparent dark:from-neutral-800/30 dark:to-transparent">
+				<div className="flex items-center justify-between px-2 py-2 sm:px-4">
 					<div className="flex items-center gap-2 sm:gap-3">
 						<motion.button
 							whileHover={{ scale: 1.2 }}
 							whileTap={{ scale: 0.9 }}
 							onClick={handleLike}
 							disabled={isLiking}
-							className="p-2.5 sm:p-3 rounded-full hover:bg-pink-100/50 dark:hover:bg-pink-900/30 transition-colors disabled:opacity-50 touch-target"
+							className="rounded-full p-2.5 transition-colors hover:bg-neutral-100 disabled:opacity-50 dark:hover:bg-neutral-900 sm:p-3 touch-target"
 						>
 							<motion.div animate={liked ? { scale: [1, 1.3, 1] } : {}} transition={{ duration: 0.4 }}>
 								{liked ? (
@@ -155,7 +236,8 @@ const PostCard = ({ post }) => {
 						<motion.button
 							whileHover={{ scale: 1.1 }}
 							whileTap={{ scale: 0.95 }}
-							className="p-2.5 sm:p-3 rounded-full hover:bg-blue-100/50 dark:hover:bg-blue-900/30 transition-colors touch-target"
+							onClick={() => setShowComments((current) => !current)}
+							className="rounded-full p-2.5 transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-900 sm:p-3 touch-target"
 						>
 							<MdModeComment className="text-xl sm:text-2xl text-neutral-700 dark:text-neutral-300" />
 						</motion.button>
@@ -163,7 +245,7 @@ const PostCard = ({ post }) => {
 						<motion.button
 							whileHover={{ scale: 1.1 }}
 							whileTap={{ scale: 0.95 }}
-							className="p-2.5 sm:p-3 rounded-full hover:bg-green-100/50 dark:hover:bg-green-900/30 transition-colors touch-target"
+							className="rounded-full p-2.5 transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-900 sm:p-3 touch-target"
 						>
 							<MdShare className="text-xl sm:text-2xl text-neutral-700 dark:text-neutral-300" />
 						</motion.button>
@@ -173,7 +255,7 @@ const PostCard = ({ post }) => {
 						whileHover={{ scale: 1.1 }}
 						whileTap={{ scale: 0.95 }}
 						onClick={() => setSaved(!saved)}
-						className="p-2.5 rounded-full hover:bg-amber-100/50 dark:hover:bg-amber-900/30 transition-colors"
+						className="rounded-full p-2.5 transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-900"
 					>
 						<motion.div
 							animate={saved ? { scale: [1, 1.2, 1] } : {}}
@@ -202,10 +284,15 @@ const PostCard = ({ post }) => {
 
 				{/* Comments Count */}
 				<div className="px-4 pb-3 text-xs text-neutral-500 dark:text-neutral-400 font-medium">
-					<motion.button whileHover={{ color: "#ec4853" }} className="hover:text-pink-600 dark:hover:text-pink-400 transition-colors">
+					<motion.button
+						whileHover={{ color: "#ec4853" }}
+						onClick={() => setShowComments((current) => !current)}
+						className="hover:text-pink-600 dark:hover:text-pink-400 transition-colors"
+					>
 						💬 {commentCount.toLocaleString()} {commentCount === 1 ? "comment" : "comments"}
 					</motion.button>
 				</div>
+				{commentsSection}
 			</motion.div>
 		);
 	}
@@ -217,10 +304,10 @@ const PostCard = ({ post }) => {
 			initial={{ opacity: 0, y: 20 }}
 			animate={{ opacity: 1, y: 0 }}
 			transition={{ duration: 0.4 }}
-			className="bg-white dark:bg-neutral-900/95 rounded-2xl shadow-sm hover:shadow-xl dark:hover:shadow-2xl dark:shadow-black/30 border border-neutral-100 dark:border-neutral-800 overflow-hidden mb-6 transition-all duration-300 backdrop-blur-sm"
+			className="mb-3 overflow-hidden border-y border-neutral-200 bg-white shadow-none dark:border-neutral-800 dark:bg-neutral-950 sm:rounded-xl sm:border"
 		>
 			{/* Post Header */}
-			<div className="px-4 py-3 flex items-center justify-between border-b border-neutral-100 dark:border-neutral-800/50">
+			<div className="flex items-center justify-between px-4 py-3">
 				<motion.div whileHover={{ scale: 1.02 }} className="flex items-center gap-3 cursor-pointer">
 					<div className="relative">
 						<img
@@ -250,10 +337,10 @@ const PostCard = ({ post }) => {
 			</div>
 
 			{/* Image Carousel */}
-			<div className="relative bg-gradient-to-br from-neutral-100 to-neutral-200 dark:from-neutral-800 dark:to-neutral-900 overflow-hidden group">
+			<div className="relative overflow-hidden bg-neutral-100 dark:bg-neutral-900 group">
 				<AnimatePresence mode="wait">
 					<motion.img
-						key={currentImageIndex}
+						key={post._id}
 						initial={{ opacity: 0, scale: 0.95 }}
 						animate={{ opacity: 1, scale: 1 }}
 						exit={{ opacity: 0, scale: 0.95 }}
@@ -273,14 +360,14 @@ const PostCard = ({ post }) => {
 			</div>
 
 			{/* Action Buttons */}
-			<div className="px-4 py-3.5 flex items-center justify-between border-b border-neutral-100 dark:border-neutral-800/50 bg-gradient-to-r from-white/50 to-transparent dark:from-neutral-800/30 dark:to-transparent">
+			<div className="flex items-center justify-between px-3 py-2">
 				<div className="flex items-center gap-1">
 					<motion.button
 						whileHover={{ scale: 1.25 }}
 						whileTap={{ scale: 0.85 }}
 						onClick={handleLike}
 						disabled={isLiking}
-						className="p-2.5 rounded-full hover:bg-pink-100/50 dark:hover:bg-pink-900/30 transition-colors disabled:opacity-50"
+						className="rounded-full p-2.5 transition-colors hover:bg-neutral-100 disabled:opacity-50 dark:hover:bg-neutral-900"
 					>
 						<motion.div animate={liked ? { scale: [1, 1.3, 1] } : {}} transition={{ duration: 0.4 }}>
 							{liked ? (
@@ -294,7 +381,8 @@ const PostCard = ({ post }) => {
 					<motion.button
 						whileHover={{ scale: 1.1 }}
 						whileTap={{ scale: 0.95 }}
-						className="p-2.5 rounded-full hover:bg-blue-100/50 dark:hover:bg-blue-900/30 transition-colors"
+						onClick={() => setShowComments((current) => !current)}
+						className="rounded-full p-2.5 transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-900"
 					>
 						<MdModeComment className="text-2xl text-neutral-700 dark:text-neutral-300" />
 					</motion.button>
@@ -302,7 +390,7 @@ const PostCard = ({ post }) => {
 					<motion.button
 						whileHover={{ scale: 1.1 }}
 						whileTap={{ scale: 0.95 }}
-						className="p-2.5 rounded-full hover:bg-green-100/50 dark:hover:bg-green-900/30 transition-colors"
+						className="rounded-full p-2.5 transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-900"
 					>
 						<MdShare className="text-2xl text-neutral-700 dark:text-neutral-300" />
 					</motion.button>
@@ -312,7 +400,7 @@ const PostCard = ({ post }) => {
 					whileHover={{ scale: 1.1 }}
 					whileTap={{ scale: 0.95 }}
 					onClick={() => setSaved(!saved)}
-					className="p-2.5 rounded-full hover:bg-amber-100/50 dark:hover:bg-amber-900/30 transition-colors"
+					className="rounded-full p-2.5 transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-900"
 				>
 					<motion.div
 						animate={saved ? { scale: [1, 1.2, 1] } : {}}
@@ -353,11 +441,13 @@ const PostCard = ({ post }) => {
 			<div className="px-4 pb-3 text-xs text-neutral-500 dark:text-neutral-400 font-medium">
 				<motion.button
 					whileHover={{ color: "#ec4853" }}
+					onClick={() => setShowComments((current) => !current)}
 					className="hover:text-pink-600 dark:hover:text-pink-400 transition-colors"
 				>
 					💬 {commentCount.toLocaleString()} {commentCount === 1 ? "comment" : "comments"}
 				</motion.button>
 			</div>
+			{commentsSection}
 		</motion.div>
 	);
 };

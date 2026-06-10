@@ -4,16 +4,33 @@ import User from "../models/user.model.js";
 // Create a new story
 export const createStory = async (req, res) => {
 	try {
-		const { image } = req.body;
+		const { image, media, mediaType = "image", kind = "story", caption = "" } = req.body;
 		const authorId = req.user._id;
+		const mediaSource = image || media;
 
-		if (!image) {
-			return res.status(400).json({ error: "Image is required" });
+		if (!mediaSource) {
+			return res.status(400).json({ error: "Media is required" });
+		}
+
+		if (!["story", "reel"].includes(kind)) {
+			return res.status(400).json({ error: "Invalid media type" });
+		}
+
+		if (!["image", "video"].includes(mediaType)) {
+			return res.status(400).json({ error: "Invalid upload format" });
+		}
+
+		if (kind === "reel" && mediaType !== "video") {
+			return res.status(400).json({ error: "Reels must be videos" });
 		}
 
 		const newStory = new Story({
 			author: authorId,
-			image,
+			image: mediaSource,
+			mediaType,
+			kind,
+			caption,
+			expiresAt: kind === "reel" ? null : undefined,
 		});
 
 		await newStory.save();
@@ -30,12 +47,20 @@ export const createStory = async (req, res) => {
 export const getStories = async (req, res) => {
 	try {
 		const userId = req.user._id;
+		const kind = req.query.kind === "reel" ? "reel" : "story";
 		const user = await User.findById(userId).select("following");
 
 		const followedUserIds = user.following || [];
 		followedUserIds.push(userId);
+		const kindFilter =
+			kind === "story"
+				? { $or: [{ kind: "story" }, { kind: { $exists: false } }] }
+				: { kind: "reel" };
 
-		const stories = await Story.find({ author: { $in: followedUserIds } })
+		const stories = await Story.find({
+			author: { $in: followedUserIds },
+			...kindFilter,
+		})
 			.populate("author", "fullName username profilePic _id")
 			.sort({ createdAt: -1 });
 
@@ -50,8 +75,13 @@ export const getStories = async (req, res) => {
 export const getUserStories = async (req, res) => {
 	try {
 		const { userId } = req.params;
+		const kind = req.query.kind === "reel" ? "reel" : "story";
+		const kindFilter =
+			kind === "story"
+				? { $or: [{ kind: "story" }, { kind: { $exists: false } }] }
+				: { kind: "reel" };
 
-		const stories = await Story.find({ author: userId })
+		const stories = await Story.find({ author: userId, ...kindFilter })
 			.populate("author", "fullName username profilePic _id")
 			.sort({ createdAt: -1 });
 

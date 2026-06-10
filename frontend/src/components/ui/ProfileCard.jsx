@@ -6,9 +6,12 @@ import {
 	MdGridOn,
 	MdBookmark,
 	MdFavorite,
+	MdClose,
+	MdLogout,
 } from "react-icons/md";
 import { ProfileImage } from "./UIComponents";
 import useGetUserPosts from "../../hooks/useGetUserPosts";
+import useGetUserProfile from "../../hooks/useGetUserProfile";
 
 const formatCount = (num = 0) => {
 	if (num >= 1_000_000) return (num / 1_000_000).toFixed(1).replace(/\.0$/, "") + "M";
@@ -19,10 +22,14 @@ const formatCount = (num = 0) => {
 const ProfileCard = ({
 	profile = {},
 	onEdit = () => { },
+	onLogout,
 }) => {
 	const [activeTab, setActiveTab] = useState("posts");
+	const [activeConnectionList, setActiveConnectionList] = useState(null);
 	const profileId = profile._id || profile.id;
 	const { posts: fetchedPosts, loading: postsLoading } = useGetUserPosts(profileId);
+	const { user: fetchedProfile, loading: profileLoading } = useGetUserProfile(profileId);
+	const displayProfile = fetchedProfile || profile;
 
 	const tabs = [
 		{ id: "posts", icon: <MdGridOn size={18} />, label: "Posts" },
@@ -30,10 +37,16 @@ const ProfileCard = ({
 		{ id: "liked", icon: <MdFavorite size={18} />, label: "Liked" },
 	];
 
-	const profilePosts = Array.isArray(profile.posts)
-		? profile.posts.filter((post) => post && typeof post === "object")
+	const profilePosts = Array.isArray(displayProfile.posts)
+		? displayProfile.posts.filter((post) => post && typeof post === "object")
 		: [];
 	const posts = fetchedPosts.length > 0 ? fetchedPosts : profilePosts;
+	const followers = Array.isArray(displayProfile.followers) ? displayProfile.followers : [];
+	const following = Array.isArray(displayProfile.following) ? displayProfile.following : [];
+	const connectionUsers = (activeConnectionList === "followers" ? followers : following).filter(
+		(user) => user && typeof user === "object"
+	);
+	const connectionTitle = activeConnectionList === "followers" ? "Followers" : "Following";
 
 	return (
 		<div className="w-full min-h-screen bg-white dark:bg-neutral-950 overflow-y-auto">
@@ -50,10 +63,10 @@ const ProfileCard = ({
 						>
 							<div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full overflow-hidden border-2 border-gray-200 dark:border-neutral-700 shadow-md">
 								<ProfileImage
-									src={profile.profilePic}
-									alt={profile.fullName}
+									src={displayProfile.profilePic}
+									alt={displayProfile.fullName}
 									size="w-full h-full"
-									initials={profile.fullName?.charAt(0).toUpperCase() || "?"}
+									initials={displayProfile.fullName?.charAt(0).toUpperCase() || "?"}
 									className="w-full h-full object-cover"
 									showDefault={true}
 								/>
@@ -66,34 +79,47 @@ const ProfileCard = ({
 							<div>
 								<div className="flex items-center gap-3 mb-4 flex-wrap">
 									<h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
-										{profile.username}
+										{displayProfile.username}
 									</h1>
-									{profile.verified && (
+									{displayProfile.verified && (
 										<MdVerified className="text-blue-500 text-xl" />
 									)}
 
 									{/* Action Buttons */}
 									{profile.isOwnProfile && (
-										<motion.button
-											whileHover={{ scale: 1.05 }}
-											whileTap={{ scale: 0.95 }}
-											onClick={onEdit}
-											className="px-5 py-2 bg-gray-200 dark:bg-neutral-800 hover:bg-gray-300 dark:hover:bg-neutral-700 text-gray-900 dark:text-white font-semibold rounded-lg transition-colors flex items-center gap-2"
-										>
-											<MdEdit size={18} />
-											Edit Profile
-										</motion.button>
+										<div className="flex flex-wrap gap-2">
+											<motion.button
+												whileHover={{ scale: 1.05 }}
+												whileTap={{ scale: 0.95 }}
+												onClick={onEdit}
+												className="px-5 py-2 bg-gray-200 dark:bg-neutral-800 hover:bg-gray-300 dark:hover:bg-neutral-700 text-gray-900 dark:text-white font-semibold rounded-lg transition-colors flex items-center gap-2"
+											>
+												<MdEdit size={18} />
+												Edit Profile
+											</motion.button>
+											{onLogout && (
+												<motion.button
+													whileHover={{ scale: 1.05 }}
+													whileTap={{ scale: 0.95 }}
+													onClick={onLogout}
+													className="md:hidden px-5 py-2 bg-red-50 dark:bg-red-950/30 hover:bg-red-100 dark:hover:bg-red-950/50 text-red-600 dark:text-red-400 font-semibold rounded-lg transition-colors flex items-center gap-2"
+												>
+													<MdLogout size={18} />
+													Logout
+												</motion.button>
+											)}
+										</div>
 									)}
 								</div>
 
 								{/* Full Name & Bio */}
 								<div className="mb-3">
 									<p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">
-										<span className="font-semibold text-gray-900 dark:text-white">{profile.fullName}</span>
+										<span className="font-semibold text-gray-900 dark:text-white">{displayProfile.fullName}</span>
 									</p>
-									{profile.bio && (
+									{displayProfile.bio && (
 										<p className="text-sm text-gray-700 dark:text-gray-300 mt-2">
-											{profile.bio}
+											{displayProfile.bio}
 										</p>
 									)}
 								</div>
@@ -110,23 +136,33 @@ const ProfileCard = ({
 									</p>
 								</motion.div>
 
-								<motion.div whileHover={{ y: -2 }} className="text-center sm:text-left cursor-pointer">
+								<motion.button
+									type="button"
+									whileHover={{ y: -2 }}
+									onClick={() => setActiveConnectionList("followers")}
+									className="text-center sm:text-left cursor-pointer"
+								>
 									<p className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">
-										{formatCount(profile.followers?.length || 0)}
+										{formatCount(followers.length || 0)}
 									</p>
 									<p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
 										Followers
 									</p>
-								</motion.div>
+								</motion.button>
 
-								<motion.div whileHover={{ y: -2 }} className="text-center sm:text-left cursor-pointer">
+								<motion.button
+									type="button"
+									whileHover={{ y: -2 }}
+									onClick={() => setActiveConnectionList("following")}
+									className="text-center sm:text-left cursor-pointer"
+								>
 									<p className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">
-										{formatCount(profile.following?.length || 0)}
+										{formatCount(following.length || 0)}
 									</p>
 									<p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
 										Following
 									</p>
-								</motion.div>
+								</motion.button>
 							</div>
 						</div>
 					</div>
@@ -232,6 +268,63 @@ const ProfileCard = ({
 					</motion.div>
 				)}
 			</div>
+
+			{activeConnectionList && (
+				<div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 px-4 py-6 backdrop-blur-sm">
+					<motion.div
+						initial={{ opacity: 0, scale: 0.96, y: 12 }}
+						animate={{ opacity: 1, scale: 1, y: 0 }}
+						className="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl dark:bg-neutral-950"
+					>
+						<div className="flex items-center justify-between border-b border-neutral-200 px-4 py-3 dark:border-neutral-800">
+							<h2 className="text-base font-bold text-neutral-900 dark:text-neutral-50">
+								{connectionTitle}
+							</h2>
+							<button
+								type="button"
+								onClick={() => setActiveConnectionList(null)}
+								className="rounded-full p-2 text-neutral-600 transition hover:bg-neutral-100 hover:text-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-50"
+								aria-label={`Close ${connectionTitle}`}
+							>
+								<MdClose className="text-xl" />
+							</button>
+						</div>
+						<div className="max-h-[70vh] overflow-y-auto p-3">
+							{profileLoading ? (
+								<div className="flex justify-center py-8">
+									<div className="h-7 w-7 animate-spin rounded-full border-b-2 border-gray-900 dark:border-white" />
+								</div>
+							) : connectionUsers.length > 0 ? (
+								connectionUsers.map((user) => (
+									<div
+										key={user._id}
+										className="flex items-center gap-3 rounded-xl px-3 py-2 transition hover:bg-neutral-100 dark:hover:bg-neutral-900"
+									>
+										<ProfileImage
+											src={user.profilePic}
+											alt={user.fullName}
+											size="w-11 h-11"
+											initials={user.fullName?.charAt(0).toUpperCase() || user.username?.charAt(0).toUpperCase() || "?"}
+										/>
+										<div className="min-w-0">
+											<p className="truncate text-sm font-bold text-neutral-900 dark:text-neutral-50">
+												{user.fullName}
+											</p>
+											<p className="truncate text-xs text-neutral-500 dark:text-neutral-400">
+												@{user.username}
+											</p>
+										</div>
+									</div>
+								))
+							) : (
+								<p className="py-8 text-center text-sm text-neutral-500 dark:text-neutral-400">
+									No {connectionTitle.toLowerCase()} yet
+								</p>
+							)}
+						</div>
+					</motion.div>
+				</div>
+			)}
 		</div>
 	);
 };

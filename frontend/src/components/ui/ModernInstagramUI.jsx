@@ -11,6 +11,7 @@ import Conversations from "../sidebar/Conversations";
 import EditProfile from "../profile/EditProfile";
 import CreatePost from "../posts/CreatePost";
 import CreateStory from "../stories/CreateStory";
+import CreateReel from "../reels/CreateReel";
 import UserSearch from "./UserSearch";
 import Reels from "./Reels";
 import { StoriesSkeletonLoader, PostSkeleton } from "./LoadingSkeletons";
@@ -24,7 +25,7 @@ const ModernInstagramUI = () => {
 	const [activeTab, setActiveTab] = useState("home");
 	const [showMessagesDetail, setShowMessagesDetail] = useState(false);
 	const [showEditModal, setShowEditModal] = useState(false);
-	const [createMode, setCreateMode] = useState(null); // null, "post", "story"
+	const [createMode, setCreateMode] = useState(null); // null, "post", "story", "reel"
 	const { posts: realPosts, loading: postsLoading, error: postsError } = useGetPosts();
 	const { logout } = useLogout();
 	useListenMessages();
@@ -37,9 +38,9 @@ const ModernInstagramUI = () => {
 	};
 
 	return (
-		<div className="fixed inset-0 flex flex-col bg-gradient-to-b from-white via-gray-50 to-white dark:from-neutral-950 dark:via-neutral-900 dark:to-neutral-950">
+		<div className="fixed inset-0 flex flex-col bg-white dark:bg-neutral-950">
 			{/* Navbar */}
-			<Navbar notificationCount={3} />
+			<Navbar onTabChange={handleTabChange} />
 
 			{/* Main Container */}
 			<div className="flex flex-1 overflow-hidden">
@@ -112,6 +113,7 @@ const ModernInstagramUI = () => {
 							<ProfileCard
 								profile={{...authUser, isOwnProfile: true}}
 								onEdit={() => setShowEditModal(true)}
+								onLogout={logout}
 							/>
 							{showEditModal && (
 								<EditProfile
@@ -167,6 +169,28 @@ const ModernInstagramUI = () => {
 													</div>
 												</motion.button>
 
+												{/* Create Reel Button */}
+												<motion.button
+													onClick={() => setCreateMode("reel")}
+													whileHover={{ scale: 1.02 }}
+													whileTap={{ scale: 0.98 }}
+													className="w-full p-4 rounded-xl border-2 border-neutral-200 dark:border-neutral-700 hover:border-purple-500 dark:hover:border-purple-500 transition bg-neutral-50 dark:bg-neutral-800/50 group"
+												>
+													<div className="flex items-center gap-4">
+														<div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center text-white text-xl font-black group-hover:shadow-lg transition">
+															R
+														</div>
+														<div className="text-left">
+															<h3 className="font-semibold text-neutral-900 dark:text-neutral-50">
+																Create Reel
+															</h3>
+															<p className="text-xs text-neutral-500 dark:text-neutral-400">
+																Upload a vertical video
+															</p>
+														</div>
+													</div>
+												</motion.button>
+
 												{/* Create Post Button */}
 												<motion.button
 													onClick={() => setCreateMode("post")}
@@ -200,12 +224,31 @@ const ModernInstagramUI = () => {
 											onClick={() => setCreateMode(null)}
 											className="mb-4 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-50 text-sm font-medium flex items-center gap-2"
 										>
-											← Back
+											Back
 										</button>
 										<CreateStory 
+											variant="panel"
 											onStoryCreated={() => {
 												setCreateMode(null);
 												setActiveTab("home");
+											}}
+										/>
+									</div>
+								</div>
+							) : createMode === "reel" ? (
+								// Reel creation
+								<div className="w-full h-full flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
+									<div className="max-w-md w-full">
+										<button
+											onClick={() => setCreateMode(null)}
+											className="mb-4 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-50 text-sm font-medium flex items-center gap-2"
+										>
+											Back
+										</button>
+										<CreateReel
+											onReelCreated={() => {
+												setCreateMode(null);
+												setActiveTab("reels");
 											}}
 										/>
 									</div>
@@ -217,7 +260,7 @@ const ModernInstagramUI = () => {
 										onClick={() => setCreateMode(null)}
 										className="mb-4 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-50 text-sm font-medium flex items-center gap-2"
 									>
-										← Back
+										Back
 									</button>
 									<CreatePost 
 										onPostCreated={() => {

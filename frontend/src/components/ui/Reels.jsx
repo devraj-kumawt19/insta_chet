@@ -26,9 +26,9 @@ const Reels = () => {
 
             setLoading(true);
 
-            const response = await apiGet("/api/stories/feed");
+            const response = await apiGet("/api/stories/feed?kind=reel");
 
-            setReels(response || []);
+            setReels(Array.isArray(response) ? response : []);
 
         } catch (error) {
 
@@ -49,6 +49,9 @@ const Reels = () => {
     useEffect(() => {
 
         fetchReels();
+        window.addEventListener("reelCreated", fetchReels);
+
+        return () => window.removeEventListener("reelCreated", fetchReels);
 
     }, []);
 
@@ -243,19 +246,30 @@ max-w-2xl
                         >
 
 
-                            <img
-
-                                src={currentReel.image}
-
-                                alt="reel"
-
-                                className="
+                            {currentReel.mediaType === "video" ? (
+                                <video
+                                    src={currentReel.image}
+                                    controls
+                                    autoPlay
+                                    loop
+                                    playsInline
+                                    className="
 w-full
 h-full
 object-cover
 "
-
-                            />
+                                />
+                            ) : (
+                                <img
+                                    src={currentReel.image}
+                                    alt="reel"
+                                    className="
+w-full
+h-full
+object-cover
+"
+                                />
+                            )}
 
 
 
@@ -280,14 +294,14 @@ text-white
 
                                 <p className="font-bold">
 
-                                    {currentReel.creatorName}
+                                    {currentReel.author?.fullName || "Creator"}
 
                                 </p>
 
 
                                 <p className="text-sm">
 
-                                    @{currentReel.creatorUsername}
+                                    @{currentReel.author?.username || "user"}
 
                                 </p>
 
@@ -295,7 +309,7 @@ text-white
 
                                 <p className="mt-3">
 
-                                    {currentReel.description}
+                                    {currentReel.caption}
 
                                 </p>
 

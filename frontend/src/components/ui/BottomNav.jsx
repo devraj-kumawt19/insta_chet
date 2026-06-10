@@ -1,21 +1,18 @@
-import React, { useState } from "react";
 import { motion } from "framer-motion";
 import {
 	MdHome,
 	MdSearch,
 	MdAdd,
-	MdMail,
+	MdVideoLibrary,
 	MdAccountCircle,
 } from "react-icons/md";
-import useNotifications from "../../hooks/useNotifications";
 
 const BottomNav = ({ activeTab = "home", onTabChange = () => {} }) => {
-	const { notificationCount } = useNotifications();
 	const tabs = [
 		{ id: "home", label: "Home", icon: MdHome },
 		{ id: "search", label: "Search", icon: MdSearch },
 		{ id: "create", label: "Create", icon: MdAdd },
-		{ id: "messages", label: "Messages", icon: MdMail },
+		{ id: "reels", label: "Reels", icon: MdVideoLibrary },
 		{ id: "profile", label: "Profile", icon: MdAccountCircle },
 	];
 
@@ -24,9 +21,9 @@ const BottomNav = ({ activeTab = "home", onTabChange = () => {} }) => {
 			initial={{ y: 100 }}
 			animate={{ y: 0 }}
 			transition={{ type: "spring", stiffness: 100, damping: 20 }}
-			className="fixed bottom-0 left-0 right-0 md:hidden z-50 bg-white dark:bg-neutral-900 border-t border-neutral-200 dark:border-neutral-800 backdrop-blur-xl bg-opacity-80 dark:bg-opacity-80"
+			className="fixed bottom-0 left-0 right-0 md:hidden z-50 border-t border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-950"
 		>
-			<div className="flex items-center justify-around h-20 px-4">
+			<div className="flex h-16 items-center justify-around px-3">
 				{tabs.map((tab) => {
 					const Icon = tab.icon;
 					return (
@@ -35,14 +32,14 @@ const BottomNav = ({ activeTab = "home", onTabChange = () => {} }) => {
 							whileHover={{ scale: 1.1 }}
 							whileTap={{ scale: 0.95 }}
 							onClick={() => onTabChange(tab.id)}
-							className="relative flex flex-col items-center justify-center gap-1 p-3 rounded-lg transition-colors group"
+							className="relative flex flex-col items-center justify-center gap-0.5 rounded-lg p-2 transition-colors group"
 						>
 							<div className="relative">
 								<Icon
 									className={`text-2xl transition-colors ${
 										activeTab === tab.id
-											? "text-pink-600 dark:text-pink-500"
-											: "text-neutral-600 dark:text-neutral-400 group-hover:text-neutral-900 dark:group-hover:text-neutral-300"
+											? "text-neutral-950 dark:text-neutral-50"
+											: "text-neutral-700 dark:text-neutral-400 group-hover:text-neutral-950 dark:group-hover:text-neutral-200"
 									}`}
 								/>
 								{tab.badge && tab.badge > 0 && (
@@ -56,9 +53,9 @@ const BottomNav = ({ activeTab = "home", onTabChange = () => {} }) => {
 								)}
 							</div>
 							<span
-								className={`text-xs font-semibold transition-colors ${
+								className={`text-[11px] font-semibold transition-colors ${
 									activeTab === tab.id
-										? "text-pink-600 dark:text-pink-500"
+										? "text-neutral-950 dark:text-neutral-50"
 										: "text-neutral-600 dark:text-neutral-400"
 								}`}
 							>
@@ -69,7 +66,7 @@ const BottomNav = ({ activeTab = "home", onTabChange = () => {} }) => {
 							{activeTab === tab.id && (
 								<motion.div
 									layoutId="activeIndicator"
-									className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-8 h-1 bg-gradient-to-r from-pink-500 to-purple-600 rounded-full"
+									className="absolute -top-1 left-1/2 h-0.5 w-7 -translate-x-1/2 rounded-full bg-neutral-950 dark:bg-neutral-50"
 									transition={{ type: "spring", stiffness: 380, damping: 30 }}
 								/>
 							)}

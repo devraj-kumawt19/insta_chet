@@ -11,9 +11,25 @@ const storySchema = new mongoose.Schema(
 			type: String,
 			required: true,
 		},
+		mediaType: {
+			type: String,
+			enum: ["image", "video"],
+			default: "image",
+		},
+		kind: {
+			type: String,
+			enum: ["story", "reel"],
+			default: "story",
+		},
+		caption: {
+			type: String,
+			default: "",
+		},
 		expiresAt: {
 			type: Date,
-			default: () => new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
+			default: function () {
+				return this.kind === "reel" ? null : new Date(Date.now() + 24 * 60 * 60 * 1000);
+			},
 		},
 		views: [
 			{

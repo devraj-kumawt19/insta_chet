@@ -13,7 +13,7 @@ const StoryFeed = () => {
 	const fetchStories = async () => {
 		try {
 			setLoading(true);
-			const response = await apiGet("/api/stories/feed");
+			const response = await apiGet("/api/stories/feed?kind=story");
 			setStories(response);
 		} catch (error) {
 			toast.error(error.message || "Failed to load stories");

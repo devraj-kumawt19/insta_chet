@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { apiPost, apiPut } from "../utils/api";
+import { apiPost } from "../utils/api";
 import toast from "react-hot-toast";
 
 /**
@@ -21,10 +21,9 @@ const usePostInteractions = (postId) => {
 		};
 	}
 
-	const likePost = async (currentLikes, userId) => {
+	const likePost = async () => {
 		try {
 			setIsLiking(true);
-			const isLiked = currentLikes?.includes(userId);
 			const response = await apiPost(`/api/posts/${postId}/like`, {});
 			return response;
 		} catch (error) {
