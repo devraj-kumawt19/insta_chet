@@ -1,158 +1,539 @@
 import Post from "../models/post.model.js";
 import User from "../models/user.model.js";
 
-// Create a new post
+
+// CREATE POST
 export const createPost = async (req, res) => {
 	try {
+
 		const { caption, image } = req.body;
 		const authorId = req.user._id;
 
-		if (!caption) {
-			return res.status(400).json({ error: "Caption is required" });
+
+		if (!caption && !image) {
+			return res.status(400).json({
+				error: "Post cannot be empty"
+			});
 		}
 
-		const newPost = new Post({
+
+		const newPost = await Post.create({
 			author: authorId,
 			caption,
-			image: image || null,
+			image: image || null
 		});
 
-		await newPost.save();
-		await newPost.populate("author", "fullName username profilePic");
+
+		// profile post count fix
+		await User.findByIdAndUpdate(
+			authorId,
+			{
+				$push: {
+					posts: newPost._id
+				}
+			}
+		);
+
+
+		await newPost.populate(
+			"author",
+			"fullName username profilePic _id"
+		);
+
 
 		res.status(201).json(newPost);
+
+
 	} catch (error) {
-		console.log("Error in createPost controller: ", error.message);
-		res.status(500).json({ error: "Internal server error" });
+
+		console.log(
+			"createPost error:",
+			error.message
+		);
+
+		res.status(500).json({
+			error: "Internal server error"
+		});
 	}
 };
 
-// Get all posts (feed)
+
+
+
+// GET FEED
 export const getFeed = async (req, res) => {
+
 	try {
-		const userId = req.user._id;
-		const user = await User.findById(userId).select("following");
 
-		// Get posts from followed users and own posts
-		const followedUserIds = user.following || [];
-		followedUserIds.push(userId);
+		const page =
+			Number(req.query.page) || 1;
 
-		let posts = await Post.find({ author: { $in: followedUserIds } })
-			.populate("author", "fullName username profilePic _id")
-			.populate("comments.user", "fullName username profilePic")
-			.sort({ createdAt: -1 })
-			.limit(50);
+		const limit = 20;
 
-		// If no posts from follows, show recent public posts
+		const skip =
+			(page - 1) * limit;
+
+
+
+		const user =
+			await User.findById(
+				req.user._id
+			).select("following");
+
+
+
+		const users = [
+			req.user._id,
+			...user.following
+		];
+
+
+
+		let posts =
+			await Post.find({
+				author: {
+					$in: users
+				}
+			})
+				.populate(
+					"author",
+					"fullName username profilePic _id"
+				)
+				.populate(
+					"comments.user",
+					"fullName username profilePic _id"
+				)
+				.sort({
+					createdAt: -1
+				})
+				.skip(skip)
+				.limit(limit);
+
+
+
+		// explore feed
 		if (posts.length === 0) {
-			posts = await Post.find()
-				.populate("author", "fullName username profilePic _id")
-				.populate("comments.user", "fullName username profilePic")
-				.sort({ createdAt: -1 })
-				.limit(50);
+
+			posts =
+				await Post.find()
+					.populate(
+						"author",
+						"fullName username profilePic _id"
+					)
+					.populate(
+						"comments.user",
+						"fullName username profilePic _id"
+					)
+					.sort({
+						createdAt: -1
+					})
+					.limit(limit);
+
 		}
 
+
+
 		res.status(200).json(posts);
+
+
+
 	} catch (error) {
-		console.log("Error in getFeed controller: ", error.message);
-		res.status(500).json({ error: "Internal server error" });
+
+		console.log(
+			"Feed error:",
+			error.message
+		);
+
+
+		res.status(500).json({
+			error: "Internal server error"
+		});
+	}
+
+};
+
+
+
+
+// USER POSTS
+export const getUserPosts = async (req, res) => {
+
+
+	try {
+
+		const posts =
+			await Post.find({
+				author: req.params.userId
+			})
+				.populate(
+					"author",
+					"fullName username profilePic _id"
+				)
+				.populate(
+					"comments.user",
+					"fullName username profilePic _id"
+				)
+				.sort({
+					createdAt: -1
+				});
+
+
+		res.status(200).json(posts);
+
+
+
+	} catch (error) {
+
+		res.status(500).json({
+			error: error.message
+		});
+
+	}
+
+};
+
+
+
+
+// LIKE / UNLIKE
+export const likePost = async (req, res) => {
+
+	try {
+
+		const post =
+			await Post.findById(
+				req.params.postId
+			);
+
+
+		if (!post) {
+
+			return res.status(404)
+				.json({
+					error: "Post not found"
+				});
+
+		}
+
+
+
+		const liked =
+			post.likes.some(
+				id =>
+					id.toString()
+					===
+					req.user._id.toString()
+			);
+
+
+
+		if (liked) {
+
+			post.likes.pull(
+				req.user._id
+			);
+			
+			// Remove from user's liked posts
+			await User.findByIdAndUpdate(
+				req.user._id,
+				{ $pull: { likedPosts: req.params.postId } }
+			);
+
+		} else {
+
+			post.likes.push(
+				req.user._id
+			);
+			
+			// Add to user's liked posts
+			await User.findByIdAndUpdate(
+				req.user._id,
+				{ $push: { likedPosts: req.params.postId } }
+			);
+
+		}
+
+
+
+		await post.save();
+
+
+
+		await post.populate(
+			"author",
+			"fullName username profilePic _id"
+		);
+
+
+
+		res.status(200)
+			.json(post);
+
+
+
+	} catch (error) {
+
+		res.status(500)
+			.json({
+				error: error.message
+			});
+
+	}
+
+};
+
+
+
+
+
+// ADD COMMENT
+export const addComment = async (req, res) => {
+
+
+	try {
+
+		const { text } = req.body;
+
+
+		if (!text?.trim()) {
+
+			return res.status(400)
+				.json({
+					error: "Comment required"
+				});
+
+		}
+
+
+		const post =
+			await Post.findById(
+				req.params.postId
+			);
+
+
+
+		if (!post) {
+
+			return res.status(404)
+				.json({
+					error: "Post not found"
+				});
+
+		}
+
+
+
+
+		post.comments.push({
+
+			user: req.user._id,
+
+			text
+
+		});
+
+
+
+		await post.save();
+
+
+
+		await post.populate(
+			"author",
+			"fullName username profilePic _id"
+		);
+
+
+		await post.populate(
+			"comments.user",
+			"fullName username profilePic _id"
+		);
+
+
+
+		res.status(201)
+			.json(post);
+
+
+
+	} catch (error) {
+
+		res.status(500)
+			.json({
+				error: error.message
+			});
+
+	}
+
+};
+
+
+
+
+// DELETE POST
+export const deletePost = async (req, res) => {
+
+	try {
+
+		const post =
+			await Post.findById(
+				req.params.postId
+			);
+
+
+
+		if (!post) {
+
+			return res.status(404)
+				.json({
+					error: "Post not found"
+				});
+
+		}
+
+
+
+
+		if (
+			post.author.toString()
+			!==
+			req.user._id.toString()
+		) {
+
+			return res.status(403)
+				.json({
+					error: "Not authorized"
+				});
+
+		}
+
+
+
+
+		await Post.findByIdAndDelete(
+			req.params.postId
+		);
+
+
+
+		// remove from user posts
+		await User.findByIdAndUpdate(
+			req.user._id,
+			{
+				$pull: {
+					posts: post._id
+				}
+			}
+		);
+
+
+
+
+		res.status(200)
+			.json({
+				message:
+					"Post deleted successfully"
+			});
+
+
+
+	} catch (error) {
+
+		res.status(500)
+			.json({
+				error: error.message
+			});
+
+	}
+
+};
+
+
+// SAVE POST
+export const savePost = async (req, res) => {
+	try {
+		const { postId } = req.params;
+		const userId = req.user._id;
+
+		const post = await Post.findById(postId);
+		if (!post) {
+			return res.status(404).json({ error: "Post not found" });
+		}
+
+		const user = await User.findById(userId);
+		if (user.savedPosts.includes(postId)) {
+			return res.status(400).json({ error: "Post already saved" });
+		}
+
+		user.savedPosts.push(postId);
+		await user.save();
+
+		res.status(200).json({ message: "Post saved successfully" });
+	} catch (error) {
+		res.status(500).json({ error: error.message });
 	}
 };
 
-// Get posts by specific user
-export const getUserPosts = async (req, res) => {
+// UNSAVE POST
+export const unsavePost = async (req, res) => {
 	try {
-		const { userId } = req.params;
+		const { postId } = req.params;
+		const userId = req.user._id;
 
-		const posts = await Post.find({ author: userId })
+		const post = await Post.findById(postId);
+		if (!post) {
+			return res.status(404).json({ error: "Post not found" });
+		}
+
+		await User.findByIdAndUpdate(
+			userId,
+			{ $pull: { savedPosts: postId } }
+		);
+
+		res.status(200).json({ message: "Post unsaved successfully" });
+	} catch (error) {
+		res.status(500).json({ error: error.message });
+	}
+};
+
+// GET SAVED POSTS
+export const getSavedPosts = async (req, res) => {
+	try {
+		const userId = req.user._id;
+
+		const user = await User.findById(userId).populate("savedPosts");
+		if (!user) {
+			return res.status(404).json({ error: "User not found" });
+		}
+
+		const posts = await Post.find({ _id: { $in: user.savedPosts } })
 			.populate("author", "fullName username profilePic _id")
-			.populate("comments.user", "fullName username profilePic")
+			.populate("comments.user", "fullName username profilePic _id")
 			.sort({ createdAt: -1 });
 
 		res.status(200).json(posts);
 	} catch (error) {
-		console.log("Error in getUserPosts controller: ", error.message);
-		res.status(500).json({ error: "Internal server error" });
+		res.status(500).json({ error: error.message });
 	}
 };
 
-// Like a post
-export const likePost = async (req, res) => {
+// GET LIKED POSTS
+export const getLikedPosts = async (req, res) => {
 	try {
-		const { postId } = req.params;
-		const userId = req.user._id;
+		const userId = req.params.userId;
 
-		const post = await Post.findById(postId);
-		if (!post) {
-			return res.status(404).json({ error: "Post not found" });
+		const user = await User.findById(userId).populate("likedPosts");
+		if (!user) {
+			return res.status(404).json({ error: "User not found" });
 		}
 
-		const alreadyLiked = post.likes.includes(userId);
+		const posts = await Post.find({ _id: { $in: user.likedPosts } })
+			.populate("author", "fullName username profilePic _id")
+			.populate("comments.user", "fullName username profilePic _id")
+			.sort({ createdAt: -1 });
 
-		if (alreadyLiked) {
-			post.likes = post.likes.filter(id => id.toString() !== userId.toString());
-		} else {
-			post.likes.push(userId);
-		}
-
-		await post.save();
-		res.status(200).json(post);
+		res.status(200).json(posts);
 	} catch (error) {
-		console.log("Error in likePost controller: ", error.message);
-		res.status(500).json({ error: "Internal server error" });
-	}
-};
-
-// Add comment to post
-export const addComment = async (req, res) => {
-	try {
-		const { postId } = req.params;
-		const { text } = req.body;
-		const userId = req.user._id;
-
-		if (!text) {
-			return res.status(400).json({ error: "Comment text is required" });
-		}
-
-		const post = await Post.findById(postId);
-		if (!post) {
-			return res.status(404).json({ error: "Post not found" });
-		}
-
-		post.comments.push({
-			user: userId,
-			text,
-		});
-
-		await post.save();
-		await post.populate("comments.user", "fullName username profilePic");
-
-		res.status(201).json(post);
-	} catch (error) {
-		console.log("Error in addComment controller: ", error.message);
-		res.status(500).json({ error: "Internal server error" });
-	}
-};
-
-// Delete post
-export const deletePost = async (req, res) => {
-	try {
-		const { postId } = req.params;
-		const userId = req.user._id;
-
-		const post = await Post.findById(postId);
-		if (!post) {
-			return res.status(404).json({ error: "Post not found" });
-		}
-
-		if (post.author.toString() !== userId.toString()) {
-			return res.status(403).json({ error: "Not authorized to delete this post" });
-		}
-
-		await Post.findByIdAndDelete(postId);
-		res.status(200).json({ message: "Post deleted successfully" });
-	} catch (error) {
-		console.log("Error in deletePost controller: ", error.message);
-		res.status(500).json({ error: "Internal server error" });
+		res.status(500).json({ error: error.message });
 	}
 };

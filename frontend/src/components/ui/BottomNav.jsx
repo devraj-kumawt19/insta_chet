@@ -7,8 +7,10 @@ import {
 	MdMail,
 	MdAccountCircle,
 } from "react-icons/md";
+import useNotifications from "../../hooks/useNotifications";
 
-const BottomNav = ({ activeTab = "home", onTabChange = () => {}, notificationCount = 0 }) => {
+const BottomNav = ({ activeTab = "home", onTabChange = () => {} }) => {
+	const { notificationCount } = useNotifications();
 	const tabs = [
 		{ id: "home", label: "Home", icon: MdHome },
 		{ id: "search", label: "Search", icon: MdSearch },

@@ -2,9 +2,11 @@ import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { MdSearch, MdFavoriteBorder, MdNotifications } from "react-icons/md";
 import ThemeToggle from "./ThemeToggle";
+import useNotifications from "../../hooks/useNotifications";
 
-const Navbar = ({ notificationCount = 0 }) => {
+const Navbar = () => {
 	const [searchFocused, setSearchFocused] = useState(false);
+	const { notificationCount } = useNotifications();
 
 	return (
 		<motion.nav

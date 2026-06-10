@@ -19,7 +19,7 @@ const API_BASE_URL = getAPIBaseURL();
  */
 export const apiCall = async (endpoint, options = {}) => {
 	const url = `${API_BASE_URL}${endpoint}`;
-	
+
 	try {
 		// Check if body is FormData (for file uploads)
 		const isFormData = options.body instanceof FormData;
@@ -38,16 +38,6 @@ export const apiCall = async (endpoint, options = {}) => {
 		const response = await fetch(url, fetchOptions);
 
 		// Handle non-OK responses
-		if (!response.ok) {
-			let errorData;
-			try {
-				errorData = await response.json();
-			} catch {
-				errorData = { error: `HTTP Error: ${response.status}` };
-			}
-			throw new Error(errorData.error || `Request failed with status ${response.status}`);
-		}
-
 		// Handle empty responses
 		const contentLength = response.headers.get("content-length");
 		if (contentLength === "0" || !contentLength) {
@@ -61,6 +51,26 @@ export const apiCall = async (endpoint, options = {}) => {
 		}
 
 		const data = await response.json();
+		return data;
+		// Handle truly empty responses. Some servers/proxies omit content-length
+		// even when JSON exists, so a missing header must still be parsed.
+		const contentLength = response.headers.get("content-length");
+		if (response.status === 204 || response.status === 205 || contentLength === "0") {
+			return null;
+		}
+
+		// Parse JSON response safely
+		const contentType = response.headers.get("content-type");
+		if (!contentType || !contentType.includes("application/json")) {
+			throw new Error("Invalid response format from server");
+		}
+
+		const text = await response.text();
+		if (!text) {
+			return null;
+		}
+
+		const data = JSON.parse(text);
 		return data;
 	} catch (error) {
 		console.error(`API Error [${endpoint}]:`, error);

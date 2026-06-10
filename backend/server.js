@@ -10,6 +10,7 @@ import messageRoutes from "./routes/message.routes.js";
 import userRoutes from "./routes/user.routes.js";
 import postRoutes from "./routes/post.routes.js";
 import storyRoutes from "./routes/story.routes.js";
+import notificationRoutes from "./routes/notification.routes.js";
 
 import connectToMongoDB from "./db/connectToMongoDB.js";
 import { app, server } from "./socket/socket.js";
@@ -45,6 +46,7 @@ app.use("/api/messages", messageRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/posts", postRoutes);
 app.use("/api/stories", storyRoutes);
+app.use("/api/notifications", notificationRoutes);
 
 app.use(express.static(path.join(__dirname, "../frontend/dist")));
 

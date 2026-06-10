@@ -16,6 +16,8 @@ import { useAuthContext } from "../../context/AuthContext";
 import useGetUserProfile from "../../hooks/useGetUserProfile";
 import useFollowUser from "../../hooks/useFollowUser";
 import useGetUserPosts from "../../hooks/useGetUserPosts";
+import useGetSavedPosts from "../../hooks/useGetSavedPosts";
+import useGetLikedPosts from "../../hooks/useGetLikedPosts";
 import EditProfile from "./EditProfile";
 import { ProfileImage } from "../ui/UIComponents";
 
@@ -37,14 +39,28 @@ const UserProfile = ({ userId }) => {
 
 	const {
 		user,
-		loading
+		loading,
+		refetch: refetchUser
 	} = useGetUserProfile(userId);
 
 
-	const {
-		posts: userPosts
-	} = useGetUserPosts(userId);
+	const profileId = userId || authUser?._id;
 
+	const {
+		posts: userPosts,
+		loading: postsLoading,
+		refetch: refetchPosts
+	} = useGetUserPosts(profileId);
+
+	const {
+		posts: savedPosts,
+		loading: savedLoading
+	} = useGetSavedPosts();
+
+	const {
+		posts: likedPosts,
+		loading: likedLoading
+	} = useGetLikedPosts(profileId);
 
 	const {
 		followUser,
@@ -59,7 +75,8 @@ const UserProfile = ({ userId }) => {
 	const [isFollowing, setIsFollowing] = useState(false);
 	const [messageSent, setMessageSent] = useState(false);
 
-	const isOwn = authUser?._id === user?._id;
+	const isOwn =
+		String(authUser?._id) === String(user?._id);
 
 	useEffect(() => {
 		if (user && authUser) {
@@ -71,14 +88,42 @@ const UserProfile = ({ userId }) => {
 		}
 	}, [user, authUser]);
 
+	// Listen for post creation to refresh posts
+	useEffect(() => {
+		const handlePostCreated = () => {
+			console.log("Post created, refreshing user posts");
+			refetchPosts && refetchPosts();
+		};
+
+		window.addEventListener("postCreated", handlePostCreated);
+		return () => window.removeEventListener("postCreated", handlePostCreated);
+	}, [refetchPosts]);
+
+	// Listen for profile updates (follow/unfollow)
+	useEffect(() => {
+		const handleProfileUpdated = () => {
+			console.log("Profile updated, refreshing user data");
+			refetchUser && refetchUser();
+		};
+
+		window.addEventListener("profileUpdated", handleProfileUpdated);
+		return () => window.removeEventListener("profileUpdated", handleProfileUpdated);
+	}, [refetchUser]);
+
 	const handleFollow = async () => {
 		const res = await followUser(userId);
-		if (res) setIsFollowing(true);
+		if (res) {
+			setIsFollowing(true);
+			refetchUser && refetchUser();
+		}
 	};
 
 	const handleUnfollow = async () => {
 		const res = await unfollowUser(userId);
-		if (res) setIsFollowing(false);
+		if (res) {
+			setIsFollowing(false);
+			refetchUser && refetchUser();
+		}
 	};
 
 	const handleMessage = () => {
@@ -157,11 +202,10 @@ const UserProfile = ({ userId }) => {
 												whileTap={{ scale: 0.95 }}
 												disabled={followLoading}
 												onClick={isFollowing ? handleUnfollow : handleFollow}
-												className={`px-6 py-2 rounded-lg font-semibold transition-all flex items-center gap-2 ${
-													isFollowing
-														? "bg-gray-200 dark:bg-neutral-800 text-gray-900 dark:text-white hover:bg-gray-300 dark:hover:bg-neutral-700"
-														: "bg-blue-500 hover:bg-blue-600 text-white"
-												}`}
+												className={`px-6 py-2 rounded-lg font-semibold transition-all flex items-center gap-2 ${isFollowing
+													? "bg-gray-200 dark:bg-neutral-800 text-gray-900 dark:text-white hover:bg-gray-300 dark:hover:bg-neutral-700"
+													: "bg-blue-500 hover:bg-blue-600 text-white"
+													}`}
 											>
 												{isFollowing ? (
 													<>
@@ -257,11 +301,10 @@ const UserProfile = ({ userId }) => {
 							<motion.button
 								key={tab.id}
 								onClick={() => setActiveTab(tab.id)}
-								className={`py-4 px-1 font-semibold text-sm sm:text-base flex items-center gap-2 border-b-2 transition-colors ${
-									activeTab === tab.id
-										? "border-gray-900 dark:border-white text-gray-900 dark:text-white"
-										: "border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-								}`}
+								className={`py-4 px-1 font-semibold text-sm sm:text-base flex items-center gap-2 border-b-2 transition-colors ${activeTab === tab.id
+									? "border-gray-900 dark:border-white text-gray-900 dark:text-white"
+									: "border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+									}`}
 							>
 								{tab.icon}
 								<span className="hidden sm:inline">{tab.label}</span>

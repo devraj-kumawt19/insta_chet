@@ -34,8 +34,9 @@ const Post = ({ post, onDelete, onLikeChange }) => {
 			const response = await apiPost(`/api/posts/${post._id}/comment`, {
 				text: newComment,
 			});
-			setComments(response.comments);
+			setComments(response.comments || []);
 			setNewComment("");
+			toast.success("Comment added!");
 		} catch (error) {
 			toast.error(error.message || "Failed to add comment");
 		}

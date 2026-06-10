@@ -24,6 +24,12 @@ const PostFeed = () => {
 		fetchFeed();
 	}, []);
 
+	// Listen for post creation event
+	useEffect(() => {
+		window.addEventListener("postCreated", fetchFeed);
+		return () => window.removeEventListener("postCreated", fetchFeed);
+	}, []);
+
 	const handlePostCreated = (newPost) => {
 		setPosts([newPost, ...posts]);
 	};

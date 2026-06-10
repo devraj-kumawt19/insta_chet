@@ -39,6 +39,10 @@ const CreatePost = ({ onPostCreated }) => {
 				image: preview,
 			});
 			onPostCreated && onPostCreated(response);
+			
+			// Emit event to refresh user posts in profile
+			window.dispatchEvent(new Event("postCreated"));
+			
 			setCaption("");
 			setImage(null);
 			setPreview(null);
