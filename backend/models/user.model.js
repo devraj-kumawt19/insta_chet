@@ -63,6 +63,12 @@ const userSchema = new mongoose.Schema(
 				ref: "Post",
 			},
 		],
+		savedReels: [
+			{
+				type: mongoose.Schema.Types.ObjectId,
+				ref: "Story",
+			},
+		],
 	},
 	{ timestamps: true }
 );

@@ -1,47 +1,44 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { MdClose, MdSearch } from "react-icons/md";
 import useConversation from "../../zustand/useConversation";
-import useGetConversations from "../../hooks/useGetConversations";
 import { apiGet } from "../../utils/api";
-import toast from "react-hot-toast";
-import { MdSearch, MdClose } from "react-icons/md";
+import { ProfileImage } from "../ui/UIComponents";
 
-const SearchInput = () => {
+const SearchInput = ({ onUserSelect, inputId }) => {
 	const [search, setSearch] = useState("");
 	const [searchResults, setSearchResults] = useState([]);
 	const [isSearching, setIsSearching] = useState(false);
-	const { setSelectedConversation } = useConversation();
-	const { conversations } = useGetConversations();
+	const { setSelectedConversation, conversations } = useConversation();
 
-	const handleSearch = async (e) => {
-		const query = e.target.value;
-		setSearch(query);
-
+	useEffect(() => {
+		const query = search.trim();
 		if (query.length < 2) {
 			setSearchResults([]);
-			return;
+			setIsSearching(false);
+			return undefined;
 		}
 
-		try {
+		const timeout = setTimeout(async () => {
 			setIsSearching(true);
-			const results = await apiGet(`/api/users/search?q=${encodeURIComponent(query)}`);
-			setSearchResults(results || []);
-		} catch (error) {
-			console.error(error);
-			setSearchResults([]);
-		} finally {
-			setIsSearching(false);
-		}
-	};
+			try {
+				const results = await apiGet(`/api/users/search?q=${encodeURIComponent(query)}`);
+				setSearchResults(results || []);
+			} catch {
+				setSearchResults([]);
+			} finally {
+				setIsSearching(false);
+			}
+		}, 300);
+
+		return () => clearTimeout(timeout);
+	}, [search]);
 
 	const handleSelectUser = (user) => {
-		const conversation = conversations.find((c) => c._id === user._id);
-		if (conversation) {
-			setSelectedConversation(conversation);
-		} else {
-			setSelectedConversation(user);
-		}
+		const conversation = conversations.find((item) => item._id === user._id) || user;
+		setSelectedConversation(conversation);
 		setSearch("");
 		setSearchResults([]);
+		onUserSelect?.(conversation);
 	};
 
 	const handleClear = () => {
@@ -50,21 +47,23 @@ const SearchInput = () => {
 	};
 
 	return (
-		<div className="relative">
+		<div className="relative min-w-0 flex-1">
 			<div className="relative">
-				<MdSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-400 text-lg" />
+				<MdSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-lg text-neutral-500" />
 				<input
 					type="text"
-					placeholder="Search users..."
-					className="input-modern pl-10 pr-10 w-full text-sm"
+					id={inputId}
+					placeholder="Search"
+					className="h-10 w-full rounded-xl border-0 bg-neutral-100 pl-10 pr-10 text-sm text-neutral-950 outline-none ring-0 placeholder:text-neutral-500 focus:bg-neutral-100 focus:ring-1 focus:ring-neutral-300 dark:bg-neutral-900 dark:text-white dark:placeholder:text-neutral-400 dark:focus:bg-neutral-900 dark:focus:ring-neutral-700"
 					value={search}
-					onChange={handleSearch}
+					onChange={(event) => setSearch(event.target.value)}
 				/>
 				{search && (
 					<button
 						type="button"
 						onClick={handleClear}
-						className="absolute right-3 top-1/2 transform -translate-y-1/2 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors"
+						className="absolute right-2 top-1/2 grid h-7 w-7 -translate-y-1/2 place-items-center rounded-full text-neutral-500 hover:bg-neutral-200 hover:text-neutral-800 dark:hover:bg-neutral-800 dark:hover:text-white"
+						aria-label="Clear search"
 					>
 						<MdClose className="text-lg" />
 					</button>
@@ -72,35 +71,30 @@ const SearchInput = () => {
 			</div>
 
 			{search && (
-				<div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg shadow-lg z-10 max-h-64 overflow-y-auto">
+				<div className="absolute left-0 right-0 top-full z-30 mt-2 max-h-72 overflow-y-auto rounded-md border border-neutral-200 bg-white shadow-xl dark:border-neutral-700 dark:bg-neutral-900">
 					{isSearching ? (
-						<div className="p-3 text-center text-sm text-neutral-500">
-							Searching...
-						</div>
+						<div className="p-4 text-center text-sm text-neutral-500">Searching...</div>
 					) : searchResults.length === 0 ? (
-						<div className="p-3 text-center text-sm text-neutral-500">
-							No users found
-						</div>
+						<div className="p-4 text-center text-sm text-neutral-500">No users found</div>
 					) : (
 						searchResults.map((user) => (
 							<button
 								key={user._id}
+								type="button"
 								onClick={() => handleSelectUser(user)}
-								className="w-full px-3 py-3 text-left hover:bg-neutral-100 dark:hover:bg-neutral-700 transition border-b border-neutral-100 dark:border-neutral-700 last:border-b-0 flex items-center gap-3"
+								className="flex w-full items-center gap-3 border-b border-neutral-100 px-3 py-3 text-left transition last:border-b-0 hover:bg-neutral-50 dark:border-neutral-800 dark:hover:bg-neutral-800"
 							>
-								<img
-									src={user.profilePic || "https://via.placeholder.com/40"}
+								<ProfileImage
+									src={user.profilePic}
 									alt={user.fullName}
-									className="w-10 h-10 rounded-full object-cover flex-shrink-0"
-									onError={(e) => {
-										e.target.src = "https://via.placeholder.com/40";
-									}}
+									size="h-10 w-10"
+									initials={user.fullName?.charAt(0).toUpperCase() || "?"}
 								/>
-								<div className="flex-1 min-w-0">
-									<div className="font-medium text-sm text-neutral-900 dark:text-white truncate">
+								<div className="min-w-0 flex-1">
+									<div className="truncate text-sm font-semibold text-neutral-950 dark:text-white">
 										{user.fullName}
 									</div>
-									<div className="text-xs text-neutral-500 dark:text-neutral-400 truncate">
+									<div className="truncate text-xs text-neutral-500 dark:text-neutral-400">
 										@{user.username}
 									</div>
 								</div>

@@ -7,7 +7,7 @@ import BottomNav from "./BottomNav";
 import Sidebar from "./Sidebar";
 import ProfileCard from "./ProfileCard";
 import MessageContainer from "../messages/MessageContainer";
-import Conversations from "../sidebar/Conversations";
+import MessagesInbox from "../messages/MessagesInbox";
 import EditProfile from "../profile/EditProfile";
 import CreatePost from "../posts/CreatePost";
 import CreateStory from "../stories/CreateStory";
@@ -40,7 +40,7 @@ const ModernInstagramUI = () => {
 	return (
 		<div className="fixed inset-0 flex flex-col bg-white dark:bg-neutral-950">
 			{/* Navbar */}
-			<Navbar onTabChange={handleTabChange} />
+			{activeTab !== "messages" && activeTab !== "reels" && <Navbar onTabChange={handleTabChange} />}
 
 			{/* Main Container */}
 			<div className="flex flex-1 overflow-hidden">
@@ -52,13 +52,19 @@ const ModernInstagramUI = () => {
 				/>
 
 				{/* Main Content - Add padding to prevent BottomNav overlap on mobile */}
-				<main className="flex-1 md:ml-80 overflow-y-auto pb-20 md:pb-0">
+				<main className={`flex-1 md:ml-80 overflow-y-auto ${
+					activeTab === "messages" || activeTab === "reels" ? "pb-0" : "pb-20 md:pb-0"
+				}`}>
 				<motion.div
 					key={activeTab}
 					initial={{ opacity: 0, y: 10 }}
 					animate={{ opacity: 1, y: 0 }}
 					transition={{ duration: 0.3 }}
-					className="w-full h-full px-0 sm:px-2 md:px-3 lg:px-4 py-3 sm:py-4 md:py-5"
+					className={`w-full h-full ${
+						activeTab === "messages" || activeTab === "reels"
+							? "p-0 md:px-3 md:py-5 lg:px-4"
+							: "px-0 py-3 sm:px-2 sm:py-4 md:px-3 md:py-5 lg:px-4"
+					}`}
 				>
 						{/* Home Tab */}
 						{activeTab === "home" && (
@@ -238,7 +244,7 @@ const ModernInstagramUI = () => {
 							) : createMode === "reel" ? (
 								// Reel creation
 								<div className="w-full h-full flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
-									<div className="max-w-md w-full">
+									<div className="max-w-3xl w-full">
 										<button
 											onClick={() => setCreateMode(null)}
 											className="mb-4 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-50 text-sm font-medium flex items-center gap-2"
@@ -280,18 +286,16 @@ const ModernInstagramUI = () => {
 
 					{/* Messages Tab */}
 					{activeTab === "messages" && (
-						<div className="w-full h-full flex flex-col md:flex-row bg-white dark:bg-neutral-900 rounded-lg sm:rounded-xl md:rounded-2xl shadow-lg md:shadow-xl overflow-hidden">
+						<div className="flex h-full min-h-0 w-full flex-col overflow-hidden bg-white dark:bg-neutral-950 md:flex-row md:rounded-lg md:border md:border-neutral-200 md:shadow-lg dark:md:border-neutral-800">
 							{/* Conversations Sidebar - Show on desktop, hide when detail view on mobile */}
-							<div className={`${showMessagesDetail ? "hidden" : "w-full"} md:flex md:w-80 lg:w-96 border-r border-neutral-200 dark:border-neutral-800 flex-col overflow-hidden`}>
-								<div className="p-3 sm:p-4 md:p-5 lg:p-6 border-b border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 flex-shrink-0">
-									<h2 className="text-lg sm:text-xl md:text-2xl font-bold text-neutral-900 dark:text-neutral-50">Messages</h2>
-								</div>
-								<div className="flex-1 overflow-y-auto">
-									<Conversations onCloseSidebar={() => setShowMessagesDetail(true)} />
-								</div>
+							<div className={`${showMessagesDetail ? "hidden" : "flex w-full"} h-full min-h-0 flex-col overflow-hidden md:flex md:w-[360px] md:flex-shrink-0 md:border-r md:border-neutral-200 dark:md:border-neutral-800 lg:w-[400px]`}>
+								<MessagesInbox
+									onOpenConversation={() => setShowMessagesDetail(true)}
+									onBack={() => handleTabChange("home")}
+								/>
 							</div>
 							{/* Message Container - Full width on mobile when detail view, hidden when list view */}
-							<div className={`${showMessagesDetail ? "w-full flex" : "hidden"} md:flex md:w-auto md:flex-1 flex-col overflow-hidden`}>
+							<div className={`${showMessagesDetail ? "flex w-full" : "hidden"} h-full min-h-0 flex-col overflow-hidden md:flex md:w-auto md:flex-1`}>
 								<MessageContainer onBack={() => setShowMessagesDetail(false)} />
 							</div>
 						</div>
@@ -301,7 +305,7 @@ const ModernInstagramUI = () => {
 		</div>
 
 		{/* Bottom Navigation (Mobile) */}
-		<BottomNav activeTab={activeTab} onTabChange={handleTabChange} />
+		{activeTab !== "messages" && <BottomNav activeTab={activeTab} onTabChange={handleTabChange} />}
 	</div>
 );
 };

@@ -1,11 +1,11 @@
 import { useEffect, useRef } from "react";
+import { MdWavingHand } from "react-icons/md";
 import useGetMessages from "../../hooks/useGetMessages";
 import MessageSkeleton from "../skeletons/MessageSkeleton";
 import Message from "./Message";
 
 const Messages = () => {
 	const { messages, loading } = useGetMessages();
-	const lastMessageRef = useRef();
 	const containerRef = useRef();
 
 	useEffect(() => {
@@ -15,14 +15,12 @@ const Messages = () => {
 	}, [messages]);
 
 	return (
-		<div ref={containerRef} className="px-3 sm:px-6 py-4 flex-1 overflow-y-auto flex flex-col gap-4 bg-gradient-to-br from-white to-neutral-50 dark:from-dark-surface dark:to-dark-bg">
-			{!loading && messages.length > 0 ? (
-				messages.map((message) => (
-					<div key={message._id} ref={lastMessageRef}>
-						<Message message={message} />
-					</div>
-				))
-			) : null}
+		<div
+			ref={containerRef}
+			className="flex h-full min-h-0 flex-col gap-2 overflow-y-auto bg-white px-2 py-4 dark:bg-neutral-950 sm:px-4 sm:py-5"
+		>
+			{!loading &&
+				messages.map((message) => <Message key={message._id} message={message} />)}
 
 			{loading && (
 				<>
@@ -33,14 +31,14 @@ const Messages = () => {
 			)}
 
 			{!loading && messages.length === 0 && (
-				<div className="flex items-center justify-center h-full">
-					<div className="text-center space-y-2">
-						<div className="text-4xl">👋</div>
-						<p className="text-sm text-neutral-600 dark:text-neutral-400">
-							No messages yet
+				<div className="flex h-full items-center justify-center">
+					<div className="max-w-xs text-center">
+						<MdWavingHand className="mx-auto text-4xl text-amber-500" />
+						<p className="mt-3 text-sm font-semibold text-neutral-800 dark:text-neutral-200">
+							Start the conversation
 						</p>
-						<p className="text-xs text-neutral-500 dark:text-neutral-500">
-							Start a conversation by sending a message
+						<p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+							Send a message to say hello.
 						</p>
 					</div>
 				</div>
@@ -50,26 +48,3 @@ const Messages = () => {
 };
 
 export default Messages;
-
-// STARTER CODE SNIPPET
-// import Message from "./Message";
-
-// const Messages = () => {
-// 	return (
-// 		<div className='px-4 flex-1 overflow-auto'>
-// 			<Message />
-// 			<Message />
-// 			<Message />
-// 			<Message />
-// 			<Message />
-// 			<Message />
-// 			<Message />
-// 			<Message />
-// 			<Message />
-// 			<Message />
-// 			<Message />
-// 			<Message />
-// 		</div>
-// 	);
-// };
-// export default Messages;

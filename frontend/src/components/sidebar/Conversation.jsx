@@ -1,21 +1,20 @@
 import { useState } from "react";
+import { MdChevronRight } from "react-icons/md";
 import { useSocketContext } from "../../context/SocketContext";
 import { useAuthContext } from "../../context/AuthContext";
 import useConversation from "../../zustand/useConversation";
 import UserProfile from "../profile/UserProfile";
 import { StatusBadge, ProfileImage } from "../ui/UIComponents";
 import { extractTime } from "../../utils/extractTime";
-import { MdMoreVert } from "react-icons/md";
 
-const Conversation = ({ conversation, emoji, onCloseSidebar }) => {
+const Conversation = ({ conversation, onCloseSidebar, onConversationSelect }) => {
 	const { selectedConversation, setSelectedConversation } = useConversation();
 	const { authUser } = useAuthContext();
+	const { onlineUsers } = useSocketContext();
 	const [showProfile, setShowProfile] = useState(false);
-	const [showMenu, setShowMenu] = useState(false);
 
 	const isSelected = selectedConversation?._id === conversation._id;
-	const { onlineUsers } = useSocketContext();
-	const isOnline = onlineUsers.includes(conversation._id);
+	const isOnline = onlineUsers.some((userId) => String(userId) === String(conversation._id));
 	const lastMessage = conversation.lastMessage;
 	const lastMessageFromMe =
 		lastMessage?.senderId && authUser?._id && String(lastMessage.senderId) === String(authUser._id);
@@ -30,134 +29,82 @@ const Conversation = ({ conversation, emoji, onCloseSidebar }) => {
 
 	const handleConversationClick = () => {
 		setSelectedConversation(conversation);
-		// Trigger mobile sidebar close callback
-		if (onCloseSidebar) {
-			onCloseSidebar();
-		}
+		onCloseSidebar?.();
+		onConversationSelect?.(conversation);
 	};
 
 	return (
 		<>
-			<div
-				className={`group relative flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all duration-200 ${
+			<button
+				type="button"
+				className={`group relative flex w-full items-center gap-3 rounded-md px-2 py-3 text-left transition-colors sm:px-3 ${
 					isSelected
-						? "bg-gradient-to-r from-primary-100 to-secondary-100 dark:from-primary-900/40 dark:to-secondary-900/40 shadow-md"
-						: "hover:bg-neutral-100 dark:hover:bg-neutral-700/50"
+						? "bg-neutral-100 dark:bg-neutral-800"
+						: "hover:bg-neutral-50 dark:hover:bg-neutral-900"
 				}`}
 				onClick={handleConversationClick}
 			>
-				{/* Avatar with Status */}
 				<div
-					className="relative flex-shrink-0 cursor-pointer hover:scale-110 transition-transform duration-200"
-					onClick={(e) => {
-						e.stopPropagation();
+					className="relative flex-shrink-0"
+					onClick={(event) => {
+						event.stopPropagation();
 						setShowProfile(true);
 					}}
 				>
 					<ProfileImage
 						src={conversation.profilePic}
 						alt={conversation.fullName}
-						size="w-12 h-12"
-						initials={conversation.fullName?.charAt(0).toUpperCase() || conversation.username?.charAt(0).toUpperCase() || "?"}
-						className="ring-2 ring-neutral-200 dark:ring-neutral-700"
+						size="h-14 w-14"
+						initials={
+							conversation.fullName?.charAt(0).toUpperCase() ||
+							conversation.username?.charAt(0).toUpperCase() ||
+							"?"
+						}
+						className="ring-1 ring-neutral-200 dark:ring-neutral-700"
 					/>
-					<StatusBadge isOnline={isOnline} size="md" />
+					<StatusBadge
+						status={isOnline ? "online" : "offline"}
+						className="absolute bottom-0 right-0 border-2 border-white dark:border-neutral-950"
+					/>
 				</div>
 
-				{/* Conversation Details */}
-				<div className="flex-1 min-w-0 md:flex md:items-center md:justify-between">
-					<div className="flex items-center justify-between gap-2 mb-1">
-						<p className="font-bold text-neutral-900 dark:text-neutral-50 text-sm truncate">
-							{conversation.fullName}
-						</p>
-						<div className="flex items-center gap-2 flex-shrink-0">
-							{lastMessageTime && (
-								<span className="text-[11px] text-neutral-500 dark:text-neutral-400">
-									{lastMessageTime}
-								</span>
-							)}
-							{conversation.hasUnread && (
-								<span className="w-2 h-2 rounded-full bg-primary-500" />
-							)}
-							<span className="text-lg">{emoji}</span>
-						</div>
-					</div>
+				<div className="min-w-0 flex-1">
 					<p
-						className={`text-xs truncate ${
-							conversation.hasUnread
-								? "font-semibold text-neutral-900 dark:text-neutral-100"
-								: "text-neutral-600 dark:text-neutral-400"
+						className={`truncate text-sm text-neutral-950 dark:text-white ${
+							conversation.hasUnread ? "font-bold" : "font-semibold"
 						}`}
 					>
-						{messagePreview}
+						{conversation.fullName}
 					</p>
+					<div className="mt-0.5 flex min-w-0 items-center gap-1 text-xs">
+						<p
+							className={`truncate ${
+								conversation.hasUnread
+									? "font-semibold text-neutral-900 dark:text-neutral-100"
+									: "text-neutral-600 dark:text-neutral-400"
+							}`}
+						>
+							{messagePreview}
+						</p>
+						{lastMessageTime && (
+							<span className="flex-shrink-0 text-neutral-400 dark:text-neutral-500">
+								· {lastMessageTime}
+							</span>
+						)}
+					</div>
 				</div>
 
-				{/* More Options Menu */}
-				<div className="relative opacity-0 group-hover:opacity-100 transition-opacity">
-					<button
-						onClick={(e) => {
-							e.stopPropagation();
-							setShowMenu(!showMenu);
-						}}
-						className="p-2 rounded-lg hover:bg-neutral-200 dark:hover:bg-neutral-600 transition-colors"
-					>
-						<MdMoreVert className="text-neutral-600 dark:text-neutral-400" />
-					</button>
-					{showMenu && (
-						<div className="absolute right-0 top-full mt-1 glass-card p-1 min-w-40 z-50 text-sm">
-							<button className="w-full text-left px-3 py-2 rounded hover:bg-primary-100 dark:hover:bg-primary-900/30 text-neutral-900 dark:text-neutral-50">
-								Pin
-							</button>
-							<button className="w-full text-left px-3 py-2 rounded hover:bg-primary-100 dark:hover:bg-primary-900/30 text-neutral-900 dark:text-neutral-50">
-								Mute
-							</button>
-							<div className="border-t border-neutral-200 dark:border-neutral-700 my-1" />
-							<button className="w-full text-left px-3 py-2 rounded hover:bg-red-100 dark:hover:bg-red-900/30 text-red-600 dark:text-red-400">
-								Delete
-							</button>
-						</div>
-					)}
+				<div className="flex flex-shrink-0 items-center gap-3">
+					{conversation.hasUnread && <span className="h-2.5 w-2.5 rounded-full bg-blue-500" />}
+					<MdChevronRight className="text-xl text-neutral-400 transition group-hover:text-neutral-700 dark:group-hover:text-neutral-200" />
 				</div>
-			</div>
+			</button>
 
-			{/* Profile Modal */}
 			{showProfile && (
-				<UserProfile
-					userId={conversation._id}
-					onClose={() => setShowProfile(false)}
-				/>
+				<UserProfile userId={conversation._id} onClose={() => setShowProfile(false)} />
 			)}
 		</>
 	);
 };
 
 export default Conversation;
-
-// STARTER CODE SNIPPET
-// const Conversation = () => {
-// 	return (
-// 		<>
-// 			<div className='flex gap-2 items-center hover:bg-sky-500 rounded p-2 py-1 cursor-pointer'>
-// 				<div className='avatar online'>
-// 					<div className='w-12 rounded-full'>
-// 						<img
-// 							src='https://cdn0.iconfinder.com/data/icons/communication-line-10/24/account_profile_user_contact_person_avatar_placeholder-512.png'
-// 							alt='user avatar'
-// 						/>
-// 					</div>
-// 				</div>
-
-// 				<div className='flex flex-col flex-1'>
-// 					<div className='flex gap-3 justify-between'>
-// 						<p className='font-bold text-gray-200'>John Doe</p>
-// 						<span className='text-xl'>🎃</span>
-// 					</div>
-// 				</div>
-// 			</div>
-
-// 			<div className='divider my-0 py-0 h-1' />
-// 		</>
-// 	);
-// };
-// export default Conversation;
